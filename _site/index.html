@@ -32,7 +32,7 @@
 
 		  
 		  <div class="blog-post">
-		  	<h2 class="blog-post-title">使用Jekyll在Github建立个人博客</h2>
+		  	<a href="/2015/02/03/jekyll.html"><h2 class="blog-post-title">使用Jekyll在Github建立个人博客</h2></a>
 			<p class="blog-post-meta">03 February 2015</p>
 			<blockquote>
   <p>之前用花生壳+ADSL+上网本的网站由于联通封了80端口，而被迫改用443的https，再之后https证书也到期了，并且申请证书又非常麻烦（跟老外交涉有时候特别崩溃，非说我用的不是真名），网站彻底就荒废掉了，本来已经准备放弃这个域名了，而后来同事说可以用github.io建站，试了一下居然成功了，这里作为网站复活的首篇文章记录下来。</p>
@@ -72,7 +72,7 @@ cd username.github.io
 
   <pre><code>#修改一下Gem源
 gem sources -r https://rubygems.org
-gem sources -a http://ruby.taobao.org
+gem sources -a https://ruby.taobao.org
 gem install bundler
 </code></pre>
 
@@ -90,6 +90,7 @@ gem 'github-pages'
   <p>完成后还需要安装一个JS引擎，这里使用nodejs，完成后启动Jekyll</p>
 
   <pre><code>pacman -S nodejs
+#在代码库的根目录下运行
 jekyll server
 </code></pre>
 </blockquote>
@@ -99,16 +100,20 @@ jekyll server
 <blockquote>
   <p>安装Jekyll完成后就需要初始化一下Jekyll的目录结构了，其主要目录结构如下</p>
 
-  <pre><code>_config.yml
-\_layout
-\_posts
+  <pre><code>/--
+  |--  _config.yml
+  |--　_layouts
+  |--　_posts
+  |--　index.html
 </code></pre>
+
+  <p>其中_config.yml保存相关配置，_layouts目录中存放页面的模版，_posts目录中存放博客文章，index.html是首页的页面。</p>
 </blockquote>
 
 <h4 id="section-2">6. 绑定自己的域名</h4>
 
 <blockquote>
-  <p>首先需要购买一个自己的域名，并将域名的解析作为别名指向自己对应的Github域名上，即增加如下的cname解析</p>
+  <p>首先需要购买一个自己的域名，并将域名的解析作为别名指向自己对应的Github域名上，即增加类似如下的cname解析</p>
 
   <pre><code>www.longlong.asia cname longlong2010.github.io
 </code></pre>
@@ -163,6 +168,7 @@ jekyll server
             <ol class="list-unstyled">
               <li><a href="http://github.com/longlong2010">GitHub</a></li>
               <li><a href="http://weibo.com/dragondragon2">Weibo</a></li>
+              <li><a href="http://blog.sina.com.cn/dragondragon2">Blog</a></li>
             </ol>
           </div>
 
