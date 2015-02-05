@@ -1,2 +1,4 @@
 highlighter: pygments
 github: [Repository metadata]
+paginate: 2
+paginate_path: "page:num"

@@ -20,7 +20,6 @@
       </div>
     </div>
 
-
     <div class="container">
 
       <div class="blog-header">
@@ -30,102 +29,55 @@
 
       <div class="row">
         <div class="col-sm-8 blog-main">
-
 		  
 		  <div class="blog-post">
-		  	<a href="/2015/02/03/jekyll.html"><h2 class="blog-post-title">使用Jekyll在Github建立个人博客</h2></a>
-			<p class="blog-post-meta">03 February 2015</p>
+		  	<a href="/2015/02/05/redis-cluster.html"><h2 class="blog-post-title">Redis Cluster配置</h2></a>
+			<p class="blog-post-meta">05 February 2015</p>
 			<blockquote>
-  <p>之前用花生壳+ADSL+上网本的网站由于联通封了80端口，而被迫改用443的https，再之后https证书也到期了，并且申请证书又非常麻烦（跟老外交涉有时候特别崩溃，非说我用的不是真名），网站彻底就荒废掉了，本来已经准备放弃这个域名了，而后来同事说可以用github.io建站，试了一下居然成功了，这里作为网站复活的首篇文章记录下来。</p>
+  <p>Redis 3.0终于要发布了，目前是RC3并且很可能是最后一个RC版本，2月中就可能会发布正式版。关注这个功能很久了，但一直到离职都没有测试过，之前是用一致性散列算法(ketama)实现了基于客户端的分布式方案，优点是比较简单灵活，配置也比较简单，但缺点就是一些同时操作多个键的命令将无法使用(如mget move等)，同时扩容时数据的迁移也是个麻烦的过程(如果不使用持久化则还好)。</p>
 </blockquote>
-
-<h4 id="github">1. 注册Github的账号</h4>
 
 <blockquote>
-  <p>首先需要在Github上注册一个自己的账号，这个过程很简单，登录<a href="https://github.com/">Github</a>，点击Sign up for Github并填写相关信息完成注册即可。</p>
+  <p>官方的文档可以参考<a href="http://redis.io/topics/cluster-tutorial">这里</a></p>
 </blockquote>
 
-<h4 id="usernamegithubio">2. 添加一个username.github.io的代码库</h4>
-
+<h4 id="cluster">1. Cluster基本配置</h4>
 <blockquote>
-  <p>新增加一个代码库，代码库的名字格式需要是username.github.io，其中username是Github账号的用户名。</p>
+  <p>基本配置文件如下，其中nodes.6380.conf是Redis自己生成的配置文件，这里只是指定生成文件的路径。</p>
+
+  <pre><code>port 6380
+cluster-enabled yes
+cluster-config-file nodes.6380.conf
+cluster-node-timeout 5000
+</code></pre>
+
+  <p>其中cluster-node-timeout是一个比较关键的参数，当一个节点在超时时间过后依然无响应，将被判定为失效并由其他的节点提到，如果没有能够替代的节点则写入会失败。</p>
 </blockquote>
 
-<h4 id="section">3. 下载建好的代码库</h4>
-
+<h4 id="cluster-1">2. Cluster启动</h4>
 <blockquote>
-  <p>使用以下命令下载建立的空代码库</p>
+  <p>每个Redis实例独立进行启动，在启动后其除了监听本来配置的端口外还会监听一个设置的端口+10000的端口作为Cluster的各个节点通信使用。如port设置为6380，则还会开启16380端口。</p>
 
-  <pre><code>git clone https://github.com/username/username.github.io.git
-cd username.github.io
+  <pre><code>tcp	0	0 0.0.0.0:6380		0.0.0.0:*	LISTEN
+tcp	0	0 0.0.0.0:16380		0.0.0.0:*	LISTEN
 </code></pre>
 
-  <p>再增加一个gitignore文件，内容如下，避免将Jekyll生成的网站文件提交到代码库中。</p>
+  <p>第一次创建Redis Cluster时需要进行一次初始化操作。初始化的命令需要Ruby支持，并且需要安装Ruby Redis模块</p>
 
-  <pre><code>_site/*
+  <pre><code>pacman -S ruby
+gem install redis
+src/redis-trib.rb create --replicas 1 127.0.0.1:6380 127.0.0.1:6381 127.0.0.1:6382 127.0.0.1:6383
 </code></pre>
+
+  <p>同时用redis-trib.rb工具还可以对Cluster进行增加节点，删除节点，数据转移等操作。</p>
 </blockquote>
 
-<h4 id="jekyll">4. 安装Jekyll</h4>
-
+<h4 id="cluster-2">3. 读写Cluster</h4>
 <blockquote>
-  <p>其实提交后的代码到Github后，会自动进行模版的编译，但如果需要在本地环境进行测试则需要安装一个Jekyll环境。其中Jekyll需要有Ruby的支持，需要安装Ruby并同时安装几个Gem包。</p>
-
-  <pre><code>#修改一下Gem源
-gem sources -r https://rubygems.org
-gem sources -a https://ruby.taobao.org
-gem install bundler
-</code></pre>
-
-  <p>在代码库中增加一个名为Gemfile的文件，内容如下</p>
-
-  <pre><code>source 'https://rubygems.org'
-gem 'github-pages'
-</code></pre>
-
-  <p>并在代码库目录中执行</p>
-
-  <pre><code>bundle install
-</code></pre>
-
-  <p>完成后还需要安装一个JS引擎，这里使用nodejs，完成后启动Jekyll</p>
-
-  <pre><code>pacman -S nodejs
-#在代码库的根目录下运行
-jekyll server
-</code></pre>
+  <p>对于Cluster的读写依然可以使用redis-cli，连接Cluster中的任何一个实例都可以，但需要加参数-c使其使用读写Cluster的协议。通过telnet测试发现Redis Cluster本质上也需要客户端进行性支持才能实现，基本上相当于一致性散列算法由Redis完成。</p>
 </blockquote>
 
-<h4 id="section-1">5. 初始化目录结构</h4>
-
-<blockquote>
-  <p>安装Jekyll完成后就需要初始化一下Jekyll的目录结构了，其主要目录结构如下</p>
-
-  <pre><code>/--
-  |--  _config.yml
-  |--　_layouts
-  |--　_posts
-  |--　index.html
-</code></pre>
-
-  <p>其中_config.yml保存相关配置，_layouts目录中存放页面的模版，_posts目录中存放博客文章，index.html是首页的页面。</p>
-</blockquote>
-
-<h4 id="section-2">6. 绑定自己的域名</h4>
-
-<blockquote>
-  <p>首先需要购买一个自己的域名，并将域名的解析作为别名指向自己对应的Github域名上，即增加类似如下的cname解析</p>
-
-  <pre><code>www.longlong.asia cname longlong2010.github.io
-</code></pre>
-
-  <p>完成后在代码库中增加一个名为CNAME的文件，内容为访问时使用的域名，例如我这里就是</p>
-
-  <pre><code>www.longlong.asia
-</code></pre>
-
-  <p>完成后就可以使用自己的域名访问到自己的博客站了。</p>
-</blockquote>
+<h4 id="section">4. 故障转移及高可用</h4>
 
 		  </div>
 		  
@@ -133,16 +85,18 @@ jekyll server
           
 		  <nav>
             <ul class="pager">
-              <li><a href="#">Previous</a></li>
-              <li><a href="#">Next</a></li>
+              
+			  
+              <li><a href="/page2">Next</a></li>
+			  
             </ul>
           </nav>
-
+		  
         </div><!-- /.blog-main -->
 		        <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
           <div class="sidebar-module sidebar-module-inset">
             <h4>About</h4>
-            <p>龙_2</p>
+            <p>龙_2  <p>低调，淡定，技术流，忠实的爱国主义者，前宝宝树运维工程师。</p></p>
           </div>
 		  
 		  <!--
@@ -175,7 +129,6 @@ jekyll server
           </div>
 
         </div><!-- /.blog-sidebar -->
-
 
       </div><!-- /.row -->
     </div><!-- /.container -->
