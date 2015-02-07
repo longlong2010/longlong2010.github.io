@@ -67,6 +67,24 @@ layout: post
 > Redis Cluster只有在有从节点时才能支持故障转移，如果全部为主节点，当一个节点失效时会返回如下的提示
 >
 	(error) CLUSTERDOWN The cluster is down. Use CLUSTER INFO for more information
+>
+> 如果有对应的从节点，则当主节点失效超过cluster-node-timeout后将会被其从节点替代，在这个时间段内到此节点的读写都会失败，因此这个超时时间应该尽可能设置的短一些。失效的节点恢复后会被自动变为从节点。通过cluster nodes命令可以查看当前Cluster的节点情况。
+>
+	#切换前的状态
+	127.0.0.1:6382 slave
+	127.0.0.1:6384 slave
+	127.0.0.1:6381 master
+	127.0.0.1:6379 myself,master
+	127.0.0.1:6383 slave
+	127.0.0.1:6380 master
+>
+	#关闭6380后再启动后
+	127.0.0.1:6382 slave 
+	127.0.0.1:6384 slave 
+	127.0.0.1:6381 maste
+	127.0.0.1:6379 myself,maste
+	127.0.0.1:6383 maste
+	127.0.0.1:6380 slave
 
 #### 5. 增加节点和数据迁移
 
