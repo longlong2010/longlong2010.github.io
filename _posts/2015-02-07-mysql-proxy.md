@@ -50,113 +50,120 @@ layout: post
 >
 > 首先需要处理连接的过程，同时连接过程需要使用连接池功能。但这里存在一个缺陷——在connect\_server中只能与后端一个MySQL连接一个连接，在启动开始时不能保证和每个MySQL都至少保持一个连接，而如果根据之后的SQL确定要用到还没有建立过连接的MySQL时就会发生错误（只有在connect\_server阶段才能进行建立连接的动作）。临时的解决办法就是在启动MySQL-Proxy后手动进行一个连接预热的过程，彻底解决则需要改一下MySQL-Proxy的源代码让其能够在初始化时对后端的每个MySQL都建立一个连接。
 >
-    local min_idle_connections = 4;
-    local max_idle_connections = 8;
+>```lua
+local min_idle_connections = 4;
+local max_idle_connections = 8;
 >
-    function connect_server()
->
-        local least_idle_conns_ndx = 0;
-        local least_idle_conns = 0;
->
-        --寻找一个空闲连接数最小的MySQL进行连接 
-        for i = 1, #proxy.global.backends do
-            local s = proxy.global.backends[i];
-            local pool = s.pool;
-            local cur_idle = pool.users[""].cur_idle_connections;
->
-            --如果完全没有空闲连接，则直接连接 
-            if cur_idle == 0 then
-                proxy.connection.backend_ndx = i;
-                return
-            end
->
-            --否则寻找空闲连接数最小的进行连接 
-            if least_idle_conns_ndx == 0 or
-               ( cur_idle < min_idle_connections and
-                 cur_idle < least_idle_conns ) then
-                least_idle_conns_ndx = i;
-                if s.idling_connections then
-                    least_idle_conns = s.idling_connections;
-                else
-                    least_idle_conns = 0;
-                end
-            end
-        end
->
-        --如果找到可以空闲连接数未满的MySQL则进行连接
-        if least_idle_conns_ndx > 0 then
-            proxy.connection.backend_ndx = least_idle_conns_ndx;
-        end
+function connect_server()
+    local least_idle_conns_ndx = 0;
+    local least_idle_conns = 0;
 >    
-        if proxy.connection.backend_ndx > 0 then
-            local s = proxy.global.backends[proxy.connection.backend_ndx];
-            local pool = s.pool;
-            local cur_idle = pool.users[""].cur_idle_connections;
->    
-            if cur_idle >= min_idle_connections then
-                return proxy.PROXY_IGNORE_RESULT;
+    --寻找一个空闲连接数最小的MySQL进行连接 
+    for i = 1, #proxy.global.backends do
+        local s = proxy.global.backends[i];
+        local pool = s.pool;
+        local cur_idle = pool.users[""].cur_idle_connections;
+>
+        --如果完全没有空闲连接，则直接连接 
+        if cur_idle == 0 then
+            proxy.connection.backend_ndx = i;
+            return
+        end
+>        
+        --否则寻找空闲连接数最小的进行连接 
+        if least_idle_conns_ndx == 0 or
+           ( cur_idle < min_idle_connections and
+             cur_idle < least_idle_conns ) then
+            least_idle_conns_ndx = i;
+            if s.idling_connections then
+                least_idle_conns = s.idling_connections;
+            else
+                least_idle_conns = 0;
             end
         end
     end
+>
+    --如果找到可以空闲连接数未满的MySQL则进行连接
+    if least_idle_conns_ndx > 0 then
+        proxy.connection.backend_ndx = least_idle_conns_ndx;
+    end
+    if proxy.connection.backend_ndx > 0 then
+        local s = proxy.global.backends[proxy.connection.backend_ndx];
+        local pool = s.pool;
+        local cur_idle = pool.users[""].cur_idle_connections;
+        if cur_idle >= min_idle_connections then
+            return proxy.PROXY_IGNORE_RESULT;
+        end
+    end
+end
+```
+>
 >
 > #### (2) 进行SQL路由
 >
 > 之后需要做的就是根据SQL语句对后端的MySQL连接进行选择，这里需要注意就是在选择之后可能需要进行数据库的切换操作，即如果操作的数据库和当前不一致需要自动在SQL语句之前增加一个切换数据库的操作，已保证对客户端的透明。
 >
-    function read_query(packet)
-        local cmd = commands.parse(packet)
-            --忽略推出命令
-            if packet:byte() == proxy.COM_QUIT then
-                proxy.response = {
-                    type = proxy.MYSQLD_PACKET_ERR,
-                    errmsg = "ignored the COM_QUIT"
-                };
-                return proxy.PROXY_SEND_RESULT;
-            end
->
-            --这里默认选择连接1
-            proxy.connection.backend_ndx = 1;
-            if packet:byte() == proxy.COM_QUERY then
-                --解析表名
-                local tokens = tokenizer.tokenize(cmd.query);
-                local table = "";
-                for i = 1, #tokens do
-                    if tokens[i].token_name == "TK_LITERAL" then
-                        table = tokens[i].text;
-                        break;
-                    end
-                end
->
-                --如果表名是t2则选择连接2
-                if table == "t2" then
-                    proxy.connection.backend_ndx = 2;
-                end
-            end
->
-        local s = proxy.connection.server;
-        local c = proxy.connection.client;
-        --如果数据库不一致则自动进行切换
-        --这里append方法的第一个参数为query的自定义id，在read_query_result方法中会用到
-        if cmd.type ~= proxy.COM_INIT_DB and
-            c.default_db and c.default_db ~= s.default_db then
-            proxy.queries:append(2, string.char(proxy.COM_INIT_DB) .. c.default_db, { resultset_is_needed = true });
+>```lua
+function read_query(packet)
+    local cmd = commands.parse(packet)
+        --忽略推出命令
+        if packet:byte() == proxy.COM_QUIT then
+            proxy.response = {
+                type = proxy.MYSQLD_PACKET_ERR,
+                errmsg = "ignored the COM_QUIT"
+            };
+            return proxy.PROXY_SEND_RESULT;
         end
-        proxy.queries:append(1, packet, { resultset_is_needed = true });
 >
-        return proxy.PROXY_SEND_QUERY;
-	end
+        --这里默认选择连接1
+        proxy.connection.backend_ndx = 1;
+        if packet:byte() == proxy.COM_QUERY then
+            --解析表名
+            local tokens = tokenizer.tokenize(cmd.query);
+            local table = "";
+            for i = 1, #tokens do
+                if tokens[i].token_name == "TK_LITERAL" then
+                    table = tokens[i].text;
+                    break;
+                end
+            end
+>
+            --如果表名是t2则选择连接2
+            if table == "t2" then
+                proxy.connection.backend_ndx = 2;
+            end
+        end
+>
+    local s = proxy.connection.server;
+    local c = proxy.connection.client;
+    --如果数据库不一致则自动进行切换
+    --这里append方法的第一个参数为query的自定义id
+    --在read_query_result方法中会用到
+    if cmd.type ~= proxy.COM_INIT_DB and
+        c.default_db and c.default_db ~= s.default_db then
+        proxy.queries:append(2, string.char(proxy.COM_INIT_DB) .. c.default_db, { resultset_is_needed = true });
+    end
+    proxy.queries:append(1, packet, { resultset_is_needed = true });
+>
+    return proxy.PROXY_SEND_QUERY;
+end
+```
 >
 > #### (3) 处理返回数据
 >
 > 这里主要是对之前所说的自动切换数据库的操作的返回结果进行屏蔽，同样是为了保证对客户端的透明。
 >
-    function read_query_result(inj)
-        --如果是自动切换数据库的返回结果则进行忽略，在read_query中将切换数据库的query的自定义id设置为2
-        if inj.id ~= 1 then
-            return proxy.PROXY_IGNORE_RESULT;
-        end
-        proxy.connection.backend_ndx = 0;
+>```lua
+function read_query_result(inj)
+    --如果是自动切换数据库的返回结果则进行忽略，在read_query中将切换数据库的query的自定义id设置为2
+    if inj.id ~= 1 then
+       return proxy.PROXY_IGNORE_RESULT;
     end
+>
+    proxy.connection.backend_ndx = 0;
+end
+```
+>
 >
 > #### (4) 实际测试
 > 实际测试环境使用第一节中表格所示的两个MySQL实例，在10.0.0.101的test库中建表t1，在10.0.0.102的test库建表t2，启动MySQL-Proxy，并进行两次初始连接，查看状态显示如下。

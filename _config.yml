@@ -1,4 +1,5 @@
 highlighter: pygments
+markdown: redcarpet
 github: [Repository metadata]
 paginate: 2
 paginate_path: "page:num"

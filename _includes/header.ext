@@ -11,6 +11,7 @@
     <link rel="Shortcut Icon" href="/favicon.ico" type="image/x-icon" />
 	<link href="/bootstrap/css/bootstrap.css" rel="stylesheet">
     <link href="/css/blog.css" rel="stylesheet">
+    <link href="/css/pygments.css" rel="stylesheet">
   </head>
   <body>
     <div class="blog-masthead">
