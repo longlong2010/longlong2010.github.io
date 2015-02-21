@@ -3,12 +3,13 @@
       <div class="blog-header">
       </div>
       <div class="row">
-        <div class="col-sm-8 blog-main">
+        <div class="col-sm-9 blog-main">
 		  <div class="blog-post">
 		  	<h2 class="blog-post-title">{{ page.title }}</h2>
 			<p class="blog-post-meta">{{ page.date | date_to_long_string }}</p>
 			{{ content }}	
 		  </div>
+		  {% include duoshuo.ext %}
 		</div>
 	  	{% include sidebar.ext %}
 	  </div>
