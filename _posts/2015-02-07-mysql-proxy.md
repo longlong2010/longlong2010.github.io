@@ -106,7 +106,7 @@ end
 >```lua
 function read_query(packet)
     local cmd = commands.parse(packet)
-        --忽略推出命令
+        --忽略退出命令
         if packet:byte() == proxy.COM_QUIT then
             proxy.response = {
                 type = proxy.MYSQLD_PACKET_ERR,
