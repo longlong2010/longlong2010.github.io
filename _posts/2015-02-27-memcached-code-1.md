@@ -72,6 +72,7 @@ void memcached_thread_init(int nthreads, struct event_base *main_base) {
     for (int i = 0; i < nthreads; i++) {
 		//开启管道
         int fds[2];
+		pipe(fds);
 >
         threads[i].notify_receive_fd = fds[0];
         threads[i].notify_send_fd = fds[1];
