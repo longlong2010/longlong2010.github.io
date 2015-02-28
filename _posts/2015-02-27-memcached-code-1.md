@@ -16,13 +16,25 @@ layout: post
 > 如第一节中所述，每个工作线程都包含两个管道的描述符，一个事件结构和一个队列。工作线程的结构如下
 >
 ```c++
+class conn_queue {
+private:
+    std::queue<int>* queue;
+    pthread_mutex_t lock;
+public:
+    conn_queue();
+    int pop();
+    void push(int fd);
+    int size();
+    ~conn_queue();
+};
+>
 typedef struct {
 	pthread_t thread_id;       
 	struct event_base *base;   //libevent句柄
 	struct event notify_event; //通知事件结构
 	int notify_receive_fd;     //触发工作线程的描述符
 	int notify_send_fd;     
-	std::queue<int> queue; 	   //连接队列，这里将连接简化为一个描述符，并且使用STL的队列实现
+	conn_queue* queue; 	   	   //连接队列，使用一个封装了自动加锁的队列
 } LIBEVENT_THREAD;
 ```
 >
@@ -48,7 +60,7 @@ static void setup_thread(LIBEVENT_THREAD *me) {
     }
 >
 	//初始化连接队列
-	me->queue = new std::queue<int>();
+	me->queue = new conn_queue();
 }
 >
 void memcached_thread_init(int nthreads, struct event_base *main_base) {
@@ -58,7 +70,7 @@ void memcached_thread_init(int nthreads, struct event_base *main_base) {
 	threads = calloc(nthreads, sizeof(LIBEVENT_THREAD));
 	//初始化每个工作线程
     for (int i = 0; i < nthreads; i++) {
-		//开启两个管道
+		//开启管道
         int fds[2];
 >
         threads[i].notify_receive_fd = fds[0];
@@ -101,9 +113,10 @@ void base_event_handler(int sock, short event, void* arg) {
     LIBEVENT_THREAD* thread = threads + tid;
     last_thread = tid;
 >
-    //这里需要对队列操作进行加锁，但我这里没有写，可以封装一个自动进行加锁的队列类
+	//将连接描述符推入队列
 	thread->queue->push(newfd);
->   
+>
+	//向管道中写入一个空字符激活触发工作线程的事件响应 
     write(thread->notify_send_fd, " ", 1); 
 }
 >
