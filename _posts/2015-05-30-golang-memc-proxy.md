@@ -104,8 +104,6 @@ func main() {
 	//使用ketama一致性散列算法
     selector, err := ketama.NewFromFile("servers.txt");
     handle_error(err);
-	//创建到需要同步的Memcache之间的连接
-    mc := memcache.NewFromSelector(selector);
 	//创建一个消息队列
     keys := make(chan string);
 >
@@ -113,6 +111,8 @@ func main() {
     n := 2;
     for i := 0; i < n; i++ {
          go func() {
+			//创建到需要同步的Memcache之间的连接
+    		mc := memcache.NewFromSelector(selector);
              for {
                  key := <-keys;
                  mc.Delete(key);
