@@ -3,7 +3,7 @@ title: 安装配置Gitlab
 layout: post
 ---
 
-> Gitlab是一个用Ruby on Rails实现的开源的并且基于Git的版本管理系统，基本上实现了一个类似于Github的相关功能——更够通过网页浏览代码，并控制代码库的访问修改权限，提交缺陷说明和代码注释，便于开发团队之间的协作。相比Phabricator，其更加注重的是对于代码库的管理。由于其是用Ruby on Rails实现，因此对于只熟悉PHP环境的人来说，安装和配置要先得复杂不少，这里简单记录一下。
+> Gitlab是一个用Ruby on Rails实现的开源的并且基于Git的版本管理系统，基本上实现了一个类似于Github的相关功能——更够通过网页浏览代码，并控制代码库的访问修改权限，提交缺陷说明和代码注释，便于开发团队之间的协作。相比Phabricator，其更加注重的是对于代码库的管理。由于其是用Ruby on Rails实现，因此对于只熟悉PHP环境的人来说，安装和配置要先得复杂不少，这里简单记录一下，安装基于Archlinux。
 
 #### 1. 安装配置Ruby环境
 
@@ -36,7 +36,7 @@ cd gitlab && bundle install --deployment --without development test postgres aws
 
 #### 3. 配置gitlab-shell
 
-> 首先需要为gitlab创建一个系统用户，并将gitlab和gitlab-shell移动到其home目录下，并修改权限
+> 首先需要为gitlab创建一个系统用户，如果在安装了git后自动创建了用户则需要修改其home目录，并将gitlab和gitlab-shell移动到其home目录下，并修改权限
 >
 ```bash
 useradd --system --create-home --comment 'GitLab' git
@@ -47,6 +47,18 @@ chown git:git -R /home/git/gitlab-shell
 cd /home/git
 cp gitlab-shell/config.yml.example gitlab-shell/config.yml
 sudo -u git gitlab-shell/bin/install
+```
+> 如果redis使用TCP服务，则最后需要注释掉config.yml中redis项目中的socket行
+>
+```yaml
+redis:
+	bin: /usr/bin/redis-cli
+	host: 127.0.0.1
+	port: 6379
+	# pass: redispass # Allows you to specify the password for Redis
+	database: 0
+	#socket: /var/run/redis/redis.sock # Comment out this line if you want to use TCP
+	namespace: resque:gitlab
 ```
 
 #### 4. 安装配置相关的服务
