@@ -79,6 +79,7 @@ include gitlab;
 ```nginx
 error_page 404 = @gitlab;
 ```
+
 #### 5. 配置及初始化Gitlab
 
 > 首先初始化一些配置文件
