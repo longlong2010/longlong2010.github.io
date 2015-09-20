@@ -70,7 +70,17 @@ fis3 release -d ../dist
        if (!this.domain) {
 ```
 >
-> 修改后再运行效果如下，在query中增加了文件指纹
+> 在query中增加了文件指纹，增加文件指纹需要在配置中增加useHash选项，同时如果任何图片类型都要做处理则匹配规则使用::image即可
+>
+```js
+fis.match('::image', {
+  useHash: true,
+  release: '/static/$0',
+  domain: ['http://cdn-domain1', 'http://cdn-domain2']
+});
+```
+> 
+> 修改后再运行效果如下
 >
 ```diff
 @@ -16,9 +16,9 @@
