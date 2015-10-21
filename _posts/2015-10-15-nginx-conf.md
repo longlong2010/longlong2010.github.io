@@ -26,7 +26,7 @@ location / {
 >
 ```nginx
 location / {
-	try_files $uri $uri/ /index.php?q=$1;
+	try_files $uri $uri/ /index.php?q=$uri&$args;
 }
 ```
 ##### 2) 整个域名跳转
