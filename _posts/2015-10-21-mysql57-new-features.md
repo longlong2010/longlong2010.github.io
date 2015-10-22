@@ -3,7 +3,7 @@ title: MySQL 5.7新特性
 layout: post
 ---
 
-> MySQL 5.7终于要发布正式版本了，相比MySQL 5.6，MySQL 5.7除了提升性能外增加了非常多的新功能，具体可以参考[官方手册](http://dev.mysql.com/doc/refman/5.7/en/mysql-nutshell.html)，其中主要有在线DDL（相比5.6增加了索引重命名），空间数据类型索引，原生JSON数据类型，多源复制等。
+> MySQL 5.7终于要发布正式版本了，相比MySQL 5.6，MySQL 5.7除了提升性能外增加了非常多的新功能，具体可以参考[官方手册](http://dev.mysql.com/doc/refman/5.7/en/mysql-nutshell.html)，其中主要有在线DDL（相比5.6增加了索引重命名），空间数据类型索引，原生JSON数据类型，多源复制，多线程复制等。
 
 #### 1. 特性变更
 
@@ -113,6 +113,9 @@ SELECT * FROM JsonData;
 >
 ```mysql
 SELECT id, JSON_EXTRACT(data, '$.id') FROM JsonData WHERE JSON_EXTRACT(data, '$.name') = 'Fred';
+>
+#5.7.9以后的版本JSON_EXTRACT可以简写成
+SELECT id, data->'$.id' FROM JsonData WHERE data->'$.name' = 'Fred';
 ```
 >
 > 结果如下
@@ -172,6 +175,7 @@ EXPLAIN SELECT * FROM JsonData WHERE name = 'longlong';
 > 结果如下，看到可以使用到索引
 >
 ```
+*************************** 1. row ***************************
            id: 1
   select_type: SIMPLE
         table: JsonData
@@ -185,5 +189,58 @@ possible_keys: name
      filtered: 100.00
         Extra: NULL
 ```
+
+#### 4. 直接增加VARCHAR字段的长度
+
+> InnoDB类型的表的VARCHAR字段可以增加其最大长度而不需要重建整个表，但也存在一些限制，最大长度小于255的VARCHAR最多能够直接增加到255，最大长度大于等于256则可以直接增大到更大的值，例如以下表
 >
+```mysql
+CREATE TABLE `CodeData` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `code` varchar(32) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB
+```
+
+> 如果直接增加code字段的长度到64，例如
+>
+```mysql
+ALTER TABLE CodeData MODIFY code varchar(64) NOT NULL;
+```
+> DDL操作会瞬间完成，并会得到以下提示
+>
+```
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+
+> 如果再将code字段的长度增加到256，例如
+>
+```mysql
+ALTER TABLE CodeData MODIFY code varchar(256) NOT NULL;
+```
+> DDL相比之前需要执行一段时间，并得到以下提示
+>
+```
+Query OK, 10000 rows affected (0.67 sec)
+Records: 10000  Duplicates: 0  Warnings: 0
+```
+> 
+> 说明增加到256后，表进行了重建操作，影响的记录数时10000行，而不再是0，而再继续增大其长度到1024
+>
+```mysql
+ALTER TABLE CodeData MODIFY code varchar(1024) NOT NULL;
+```
+> DDL操作会瞬间完成，并会得到以下提示
+>
+```
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+>
+> 说明长度超过256后，增加长度再次不需要重建整个表。
+
+#### 5. 空间数据类型索引
+
+> 在MySQL 5.7中InnoDB中使用空间数据类型也可以向MyISAM一样建立索引进行查询了。
 #### 未完待续
