@@ -149,7 +149,7 @@ SELECT * FROM JsonData WHERE id = 1;
 >
 > 此外还有JSON\_INSERT，JSON\_REPLACE，JSON\_APPEND，JSON\_REMOVE等（insert replace set的语意与Memcache的add replace set类似）可以对JSON数据进行修改而不需要从客户端修改后覆盖原来的数据，可以节约很多数据传输，提升操作的速度
 >
-> 另外还可以对JSON的某个属性建立索引，进行检索，对表进行以下的修改
+> 另外还可以对JSON的某个属性建立索引，进行检索，对表进行以下的修改，注意只有InnoDB支持对于VIRTUAL列增加索引
 >
 ```mysql
 ALTER TABLE JsonData ADD name varchar(64) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(data, '$.name'))) VIRTUAL;
@@ -238,9 +238,77 @@ Query OK, 0 rows affected (0.07 sec)
 Records: 0  Duplicates: 0  Warnings: 0
 ```
 >
-> 说明长度超过256后，增加长度再次不需要重建整个表。
+> 说明长度超过256后，增加长度再次不需要重建整个表。因此在MySQL 5.7中，VARCHAR的长度如果接近255则最好设定为256，这样如果以后需要增加长度则不需要重建整个表，而代价只是多用一个字节来存储列的长度而已还是比较划算的。
 
 #### 5. 空间数据类型索引
 
-> 在MySQL 5.7中InnoDB中使用空间数据类型也可以向MyISAM一样建立索引进行查询了。
-#### 未完待续
+> 在MySQL 5.7中InnoDB中使用空间数据类型也可以像MyISAM一样建立索引进行查询了。创建如下表
+>
+```mysql
+CREATE TABLE GeomData (
+	id int NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+	g geometry NOT NULL
+) ENGINE = InnoDB;
+```
+>
+> 写入一行数据，并查看写入的数据
+>
+```mysql
+INSERT INTO GeomData (g) VALUES (Point(1, 2));
+SELECT ST_ASTEXT(g) FROM GeomData;
+```
+>
+```
++--------------+
+| ST_ASTEXT(g) |
++--------------+
+| POINT(1 2)   |
++--------------+
+1 row in set (0.00 sec)
+```
+>
+> 随机导入一些数据后，为空间类型列增加一个索引，并分析以下语句的执行计划
+>
+```mysql
+ALTER TABLE GeomData ADD SPATIAL INDEX(g);
+EXPLAIN SELECT id FROM GeomData WHERE MBREquals(ST_GeomFROMTEXT('POINT(1 2)'), g);
+```
+> 会得到以下结果
+>
+```
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: GeomData
+   partitions: NULL
+         type: range
+possible_keys: g
+          key: g
+      key_len: 34
+          ref: NULL
+         rows: 619
+     filtered: 100.00
+        Extra: Using where
+```
+> 其它空间相关的函数可以参考[官方手册](http://dev.mysql.com/doc/refman/5.7/en/spatial-function-reference.html)
+
+#### 6. 多线程复制
+
+> 通常情况下MySQL复制只有两个线程，即IO线程和SQL线程，而在MySQL 5.6中可以支持开启多个Worker线程执行复制过来的binlog，但限制是只有不同数据库的binlog才会在多个Worker线程之间并行执行，而在MySQL 5.7中增加了对于同一个时间点的binlog也可以并行执行（应该是基于Group Commit机制）。相关的配置如下
+>
+```ini
+slave_parallel_type=LOGICAL_CLOCK
+slave_parallel_workers=5
+```
+>
+> 增加配置后，可以在Slave上看到启动的Worker线程
+>
+```
+|  3 | system user | Connect |    9 | Waiting for an event from Coordinator |
+|  4 | system user | Connect |    9 | Waiting for an event from Coordinator |
+|  5 | system user | Connect |    9 | Waiting for an event from Coordinator |
+|  6 | system user | Connect |    9 | Waiting for an event from Coordinator |
+|  8 | system user | Connect |    9 | Waiting for an event from Coordinator |
+```
+>
+> 在并发较高的情况下可以在一定程度上提高复制的性能。
