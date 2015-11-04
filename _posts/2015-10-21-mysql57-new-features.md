@@ -86,7 +86,7 @@ CREATE TABLE JsonData(
 	data json NOT NULL
 ) ENGINE = InnoDB;
 ```
-> 向其中插入几行数据，并进行插叙
+> 向其中插入几行数据，并进行查询
 >
 ```mysql
 INSERT INTO JsonData (data) VALUES 
