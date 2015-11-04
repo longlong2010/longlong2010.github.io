@@ -59,7 +59,7 @@ proxy_store $document_root/$store_uri;
 error_page 500 502 504 = @error;
 >
 location @error {
-	try_files $host$request_uri $host$request_uri/index.html = 404;
+	try_files /$host$request_uri /$host$request_uri/index.html = 404;
 } 
 ```
 >
@@ -103,7 +103,7 @@ server {
     error_page 500 502 504 = @error;
 >
     location @error {
-        try_files $host$request_uri $host$request_uri/index.html = 404;
+        try_files /$host$request_uri /$host$request_uri/index.html = 404;
     }   
 }
 ```
