@@ -55,9 +55,9 @@ ZEND_API int zend_alter_ini_entry_ex(zend_string *name, zend_string *new_value, 
 > 重新增加Magic Quotes GPC的功能需要大概以下过程，首先重新添加Magic Quotes GPC相关的配置，然后在PHP注册全局变量的过程中对其进行addslashes操作，另外在对注册环境变量时临时关闭Magic Quotes GPC功能，最后在filter扩展中也增加addslashes，由于使用了此模块注册全局变量的逻辑将由这里进行处理。对PHP 7RC7的修改的patch大致如下
 >
 ```diff
-diff -Nur php-7.0.0RC7/ext/filter/filter.c php-7.0.0RC7-patched/ext/filter/filter.c
---- php-7.0.0RC7/ext/filter/filter.c	2015-11-11 19:03:35.000000000 +0800
-+++ php-7.0.0RC7-patched/ext/filter/filter.c	2015-11-18 22:20:43.468976404 +0800
+diff -Nur php-7.0.0RC8/ext/filter/filter.c php-7.0.0RC8-patched/ext/filter/filter.c
+--- php-7.0.0RC8/ext/filter/filter.c	2015-11-25 12:04:24.000000000 +0800
++++ php-7.0.0RC8-patched/ext/filter/filter.c	2015-11-30 09:08:18.476676725 +0800
 @@ -467,6 +467,8 @@
  		if (IF_G(default_filter) != FILTER_UNSAFE_RAW) {
  			ZVAL_STRINGL(&new_var, *val, val_len);
@@ -67,9 +67,9 @@ diff -Nur php-7.0.0RC7/ext/filter/filter.c php-7.0.0RC7-patched/ext/filter/filte
  		} else {
  			ZVAL_STRINGL(&new_var, *val, val_len);
  		}
-diff -Nur php-7.0.0RC7/ext/standard/basic_functions.c php-7.0.0RC7-patched/ext/standard/basic_functions.c
---- php-7.0.0RC7/ext/standard/basic_functions.c	2015-11-11 19:03:33.000000000 +0800
-+++ php-7.0.0RC7-patched/ext/standard/basic_functions.c	2015-11-18 22:23:55.738978812 +0800
+diff -Nur php-7.0.0RC8/ext/standard/basic_functions.c php-7.0.0RC8-patched/ext/standard/basic_functions.c
+--- php-7.0.0RC8/ext/standard/basic_functions.c	2015-11-25 12:04:21.000000000 +0800
++++ php-7.0.0RC8-patched/ext/standard/basic_functions.c	2015-11-30 09:08:18.476676725 +0800
 @@ -4619,10 +4619,7 @@
     Get the current active configuration setting of magic_quotes_gpc */
  PHP_FUNCTION(get_magic_quotes_gpc)
@@ -82,36 +82,48 @@ diff -Nur php-7.0.0RC7/ext/standard/basic_functions.c php-7.0.0RC7-patched/ext/s
  }
  /* }}} */
 > 
-diff -Nur php-7.0.0RC7/main/main.c php-7.0.0RC7-patched/main/main.c
---- php-7.0.0RC7/main/main.c	2015-11-11 19:03:36.000000000 +0800
-+++ php-7.0.0RC7-patched/main/main.c	2015-11-18 22:22:45.368977923 +0800
-@@ -507,6 +507,9 @@
+diff -Nur php-7.0.0RC8/main/main.c php-7.0.0RC8-patched/main/main.c
+--- php-7.0.0RC8/main/main.c	2015-11-25 12:04:24.000000000 +0800
++++ php-7.0.0RC8-patched/main/main.c	2015-11-30 09:09:44.176170262 +0800
+@@ -507,6 +507,7 @@
  	STD_PHP_INI_BOOLEAN("ignore_repeated_source",	"0",	PHP_INI_ALL,		OnUpdateBool,			ignore_repeated_source,	php_core_globals,	core_globals)
  	STD_PHP_INI_BOOLEAN("report_memleaks",		"1",		PHP_INI_ALL,		OnUpdateBool,			report_memleaks,		php_core_globals,	core_globals)
  	STD_PHP_INI_BOOLEAN("report_zend_debug",	"1",		PHP_INI_ALL,		OnUpdateBool,			report_zend_debug,		php_core_globals,	core_globals)
 +	STD_PHP_INI_BOOLEAN("magic_quotes_gpc",		"1",		PHP_INI_PERDIR|PHP_INI_SYSTEM,	OnUpdateBool,	magic_quotes_gpc,		php_core_globals,	core_globals)
-+	STD_PHP_INI_BOOLEAN("magic_quotes_runtime",	"0",		PHP_INI_ALL,		OnUpdateBool,			magic_quotes_runtime,	php_core_globals,	core_globals)
-+	STD_PHP_INI_BOOLEAN("magic_quotes_sybase",	"0",		PHP_INI_ALL,		OnUpdateBool,			magic_quotes_sybase,	php_core_globals,	core_globals)
  	STD_PHP_INI_ENTRY("output_buffering",		"0",		PHP_INI_PERDIR|PHP_INI_SYSTEM,	OnUpdateLong,	output_buffering,		php_core_globals,	core_globals)
  	STD_PHP_INI_ENTRY("output_handler",			NULL,		PHP_INI_PERDIR|PHP_INI_SYSTEM,	OnUpdateString,	output_handler,		php_core_globals,	core_globals)
  	STD_PHP_INI_BOOLEAN("register_argc_argv",	"1",		PHP_INI_PERDIR|PHP_INI_SYSTEM,	OnUpdateBool,	register_argc_argv,		php_core_globals,	core_globals)
-diff -Nur php-7.0.0RC7/main/php_globals.h php-7.0.0RC7-patched/main/php_globals.h
---- php-7.0.0RC7/main/php_globals.h	2015-11-11 19:03:36.000000000 +0800
-+++ php-7.0.0RC7-patched/main/php_globals.h	2015-11-18 22:22:56.165644722 +0800
-@@ -54,6 +54,10 @@
+@@ -2233,6 +2234,7 @@
+ 				E_DEPRECATED,
+ 				"Directive '%s' is deprecated in PHP 5.3 and greater",
+ 				{
++					"magic_quotes_gpc",
+ 					NULL
+ 				}
+ 			},
+@@ -2244,7 +2246,6 @@
+ 					"asp_tags",
+ 					"define_syslog_variables",
+ 					"highlight.bg",
+-					"magic_quotes_gpc",
+ 					"magic_quotes_runtime",
+ 					"magic_quotes_sybase",
+ 					"register_globals",
+diff -Nur php-7.0.0RC8/main/php_globals.h php-7.0.0RC8-patched/main/php_globals.h
+--- php-7.0.0RC8/main/php_globals.h	2015-11-25 12:04:24.000000000 +0800
++++ php-7.0.0RC8-patched/main/php_globals.h	2015-11-30 09:08:29.765651533 +0800
+@@ -54,6 +54,8 @@
  } arg_separators;
 > 
  struct _php_core_globals {
 +	zend_bool magic_quotes_gpc;
-+	zend_bool magic_quotes_runtime;
-+	zend_bool magic_quotes_sybase;
 +
  	zend_bool implicit_flush;
 > 
  	zend_long output_buffering;
-diff -Nur php-7.0.0RC7/main/php_variables.c php-7.0.0RC7-patched/main/php_variables.c
---- php-7.0.0RC7/main/php_variables.c	2015-11-11 19:03:36.000000000 +0800
-+++ php-7.0.0RC7-patched/main/php_variables.c	2015-11-18 22:19:14.128975284 +0800
+diff -Nur php-7.0.0RC8/main/php_variables.c php-7.0.0RC8-patched/main/php_variables.c
+--- php-7.0.0RC8/main/php_variables.c	2015-11-25 12:04:24.000000000 +0800
++++ php-7.0.0RC8-patched/main/php_variables.c	2015-11-30 09:08:18.480011725 +0800
 @@ -49,7 +49,11 @@
  	assert(strval != NULL);
 > 
@@ -233,9 +245,9 @@ diff -Nur php-7.0.0RC7/main/php_variables.c php-7.0.0RC7-patched/main/php_variab
  }
  /* }}} */
 >
-diff -Nur php-7.0.0RC7/sapi/cgi/cgi_main.c php-7.0.0RC7-patched/sapi/cgi/cgi_main.c
---- php-7.0.0RC7/sapi/cgi/cgi_main.c	2015-11-11 19:03:24.000000000 +0800
-+++ php-7.0.0RC7-patched/sapi/cgi/cgi_main.c	2015-11-18 22:19:40.342308948 +0800
+diff -Nur php-7.0.0RC8/sapi/cgi/cgi_main.c php-7.0.0RC8-patched/sapi/cgi/cgi_main.c
+--- php-7.0.0RC8/sapi/cgi/cgi_main.c	2015-11-25 12:04:12.000000000 +0800
++++ php-7.0.0RC8-patched/sapi/cgi/cgi_main.c	2015-11-30 09:08:18.500021725 +0800
 @@ -632,8 +632,16 @@
  	php_php_import_environment_variables(array_ptr);
 > 
@@ -253,9 +265,9 @@ diff -Nur php-7.0.0RC7/sapi/cgi/cgi_main.c php-7.0.0RC7-patched/sapi/cgi/cgi_mai
  	}
  }
 > 
-diff -Nur php-7.0.0RC7/sapi/fpm/fpm/fpm_main.c php-7.0.0RC7-patched/sapi/fpm/fpm/fpm_main.c
---- php-7.0.0RC7/sapi/fpm/fpm/fpm_main.c	2015-11-11 19:03:23.000000000 +0800
-+++ php-7.0.0RC7-patched/sapi/fpm/fpm/fpm_main.c	2015-11-18 22:20:06.398975944 +0800
+diff -Nur php-7.0.0RC8/sapi/fpm/fpm/fpm_main.c php-7.0.0RC8-patched/sapi/fpm/fpm/fpm_main.c
+--- php-7.0.0RC8/sapi/fpm/fpm/fpm_main.c	2015-11-25 12:04:12.000000000 +0800
++++ php-7.0.0RC8-patched/sapi/fpm/fpm/fpm_main.c	2015-11-30 09:08:18.516696725 +0800
 @@ -562,6 +562,7 @@
  void cgi_php_import_environment_variables(zval *array_ptr) /* {% raw %}{{{ {% endraw %}*/
  {
