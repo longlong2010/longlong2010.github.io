@@ -64,8 +64,44 @@ else
                              pointer_index - 1); 
 } 
 ```
+#### 3. 带权重的一致性散列算法
 
-#### 3. 压缩算法和标志位的处理 
+> 在xmemcached中带权重的一致性散列算法的处理方法是将当前节点的虚节点个数（默认为160）直接乘以其权重，而在libmemcached中除了乘以了权重之外，还乘以了总节点个数/总权重值（好处是只要各节点权重比相同，散列的结果就是相同的）。为了保证散列结果的一致性，需要修改xmemcached的源代码（或者增加一个散列算法类型 AbstractMemcachedSessionLocator），其patch如下
+>
+```diff
+diff --git a/src/main/java/net/rubyeye/xmemcached/impl/KetamaMemcachedSessionLocator.java b/src/main/java/net/rubyeye/xmemcached/impl/KetamaMemcachedSessionLocator.java
+index 2e9548d..2c5a191 100644
+--- a/src/main/java/net/rubyeye/xmemcached/impl/KetamaMemcachedSessionLocator.java
++++ b/src/main/java/net/rubyeye/xmemcached/impl/KetamaMemcachedSessionLocator.java
+@@ -91,7 +91,12 @@ AbstractMemcachedSessionLocator {
+> 
+        private final void buildMap(Collection<Session> list, HashAlgorithm alg) {
+                TreeMap<Long, List<Session>> sessionMap = new TreeMap<Long, List<Session>>();
+-
++               int totalWeight = 0;
++               for (Session session : list) {
++                       if (session instanceof MemcachedTCPSession) {
++                               totalWeight += ((MemcachedSession) session).getWeight();
++                       }
++               }
+                for (Session session : list) {
+                        String sockStr = null;
+                        if (this.cwNginxUpstreamConsistent) {
+@@ -117,7 +122,9 @@ AbstractMemcachedSessionLocator {
+                         */
+                        int numReps = NUM_REPS;
+                        if (session instanceof MemcachedTCPSession) {
+-                               numReps *= ((MemcachedSession) session).getWeight();
++                               int weight = ((MemcachedSession) session).getWeight();
++                               float pct = (float) weight / (float) totalWeight;
++                               numReps = (int) ((Math.floor((float)(pct * NUM_REPS / 4 * list.size() + 0.0000000001))) * 4);
+                        }
+                        if (alg == HashAlgorithm.KETAMA_HASH) {
+                                for (int i = 0; i < numReps / 4; i++) {
+```
+>
+
+#### 4. 压缩算法和标志位的处理 
 
 > 在较早版本的php-memcached中使用的是zlib进行的数据压缩，新版本中默认使用fastlz，这里为了保证兼容性依然使用zlib进行数据压缩，同时Java中默认就可以支持zlib压缩。同时在php-memcached的不同版本中有两套标志位的用法，这里需要分别予以支持。
 
@@ -155,7 +191,7 @@ class PHP7Transcoder extends PHPTranscoder {
 >
 > 这里没有对PHP中的数据类型做相关的处理，只是处理了压缩，即PHP中的任何数据类型在Java中都会变为String类型，并且Java中目前也只是提供了写入String的接口
 
-#### 4. Java接口类
+#### 5. Java接口类
 
 > 仿照php-memcached中的Memcached类实现了Java的访问接口，只实现了对String类型的读写操作
 >
