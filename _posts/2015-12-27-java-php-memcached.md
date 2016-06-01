@@ -29,17 +29,17 @@ array('127.0.0.1', 11214),
 >
 ```java
 try {
-	XMemcachedClientBuilder builder = new XMemcachedClientBuilder();
-	//注意这里需要开启cwNginxUpstreamConsistent方式，兼容libmemcached中的11211 hack
-	builder.setSessionLocator(new KetamaMemcachedSessionLocator(true));
-	client = builder.build();
-	client.addServer("127.0.0.1", 11211);
-	client.addServer("127.0.0.1", 11212);
-	client.addServer("127.0.0.1", 11213);
-	client.addServer("127.0.0.1", 11214);
-	client.shutdown();
+    XMemcachedClientBuilder builder = new XMemcachedClientBuilder();
+    //注意这里需要开启cwNginxUpstreamConsistent方式，兼容libmemcached中的11211 hack
+    builder.setSessionLocator(new KetamaMemcachedSessionLocator(true));
+    client = builder.build();
+    client.addServer("127.0.0.1", 11211);
+    client.addServer("127.0.0.1", 11212);
+    client.addServer("127.0.0.1", 11213);
+    client.addServer("127.0.0.1", 11214);
+    client.shutdown();
 } catch (Exception ex) {
-	ex.printStackTrace();
+    ex.printStackTrace();
 }
 ```
 
@@ -115,16 +115,16 @@ abstract class PHPTranscoder extends PrimitiveTypeTranscoder<String> {
 //针对旧版本的php-memcached，由于在PHP5中使用了这个版本，所以叫做PHP5
 class PHP5Transcoder extends PHPTranscoder {
 >    
-	//使用压缩的最小长度
+    //使用压缩的最小长度
     final int COMPRESSION_THRESHOLD = 100;
-	//压缩的标志位
+    //压缩的标志位
     final int COMPRESSION_MASK = 1 << 1;
 >
-	//取出数据的处理
+    //取出数据的处理
     public String decode(CachedData d) {
         byte[] data = d.getData();
         int flag = d.getFlag();
-		//如果带有压缩标志位，则进行解压缩处理
+        //如果带有压缩标志位，则进行解压缩处理
         if ((flag & COMPRESSION_MASK) == COMPRESSION_MASK) {
             setCompressionMode(CompressionMode.ZIP);
             data = decompress(data);
@@ -132,11 +132,11 @@ class PHP5Transcoder extends PHPTranscoder {
         return new String(data);
     }
 >
-	//存储数据的处理
+    //存储数据的处理
     public CachedData encode(String o) {
         byte[] data = o.getBytes();
         int flag = 0;
-		//如果数据超过了压缩的最小长度，则进行压缩，并更改标志位
+        //如果数据超过了压缩的最小长度，则进行压缩，并更改标志位
         if (data.length > COMPRESSION_THRESHOLD) {
             setCompressionMode(CompressionMode.ZIP);
             data = compress(data);
@@ -157,7 +157,7 @@ class PHP7Transcoder extends PHPTranscoder {
         int flag = d.getFlag();
         if ((flag & COMPRESSION_MASK) == COMPRESSION_MASK) {
             setCompressionMode(CompressionMode.ZIP);
-			//解压缩时需要处理size_t hack，存储时开头使用了一个size_t保存了压缩前数据的长度，为了支持fastlz
+            //解压缩时需要处理size_t hack，存储时开头使用了一个size_t保存了压缩前数据的长度，为了支持fastlz
             byte[] realdata = new byte[data.length - 4];
             System.arraycopy(data, 4, realdata, 0, data.length - 4);
             data = decompress(realdata);
@@ -170,15 +170,15 @@ class PHP7Transcoder extends PHPTranscoder {
         byte[] data = realdata;
         int flag = 0;
         if (realdata.length > COMPRESSION_THRESHOLD) {
-			//上面提到的size_t hack，将长度转换为四个字节
+            //上面提到的size_t hack，将长度转换为四个字节
             byte[] lenbytes = new byte[4];
             for (int i = 0; i < lenbytes.length; i++) {
                 lenbytes[i] = (byte) ((realdata.length >> (8 * i)) & 0xff);
             }
-			//压缩数据
+            //压缩数据
             setCompressionMode(CompressionMode.ZIP);
             realdata = compress(realdata);           
-			//合并数据
+            //合并数据
             data = new byte[realdata.length + 4];
             System.arraycopy(lenbytes, 0, data, 0, 4);
             System.arraycopy(realdata, 0, data, 4, realdata.length);

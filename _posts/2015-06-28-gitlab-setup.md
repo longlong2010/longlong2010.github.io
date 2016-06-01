@@ -52,13 +52,13 @@ sudo -u git gitlab-shell/bin/install
 >
 ```yaml
 redis:
-	bin: /usr/bin/redis-cli
-	host: 127.0.0.1
-	port: 6379
-	# pass: redispass # Allows you to specify the password for Redis
-	database: 0
-	#socket: /var/run/redis/redis.sock # Comment out this line if you want to use TCP
-	namespace: resque:gitlab
+    bin: /usr/bin/redis-cli
+    host: 127.0.0.1
+    port: 6379
+    # pass: redispass # Allows you to specify the password for Redis
+    database: 0
+    #socket: /var/run/redis/redis.sock # Comment out this line if you want to use TCP
+    namespace: resque:gitlab
 ```
 
 #### 4. 安装配置相关的服务

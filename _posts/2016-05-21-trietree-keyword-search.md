@@ -12,22 +12,22 @@ layout: post
 ```php
 <?php
 $trie_tree = array(
-	'P' => array(
-		'H' => array(
-			'P' => array(
-			),
-		),
-		'e' => array(
-			'r' => array(
-				'l' => array(
-				),
-			),
-			'a' => array(
-				'r' => array(
-				),
-			),
-		),
-	),
+    'P' => array(
+        'H' => array(
+            'P' => array(
+            ),
+        ),
+        'e' => array(
+            'r' => array(
+                'l' => array(
+                ),
+            ),
+            'a' => array(
+                'r' => array(
+                ),
+            ),
+        ),
+    ),
 );
 ```
 > 多于多字节组成的编码，如GBK或UTF-8，这里也只需要按照其单子节的编码进行处理即可，因此算法并不依赖于文本的编码，只要保证关键词列表与待检索文本的编码一致即可。另外对于每一个节点还需要标注其是否是某个关键词的结尾，例如PHP和PHP5都是关键词，如果不进行结尾标记，在生成TrieTree时PHP这个关键词就相当于不存在了，当文本中只还有PHP关键词时将不能够匹配成功。
@@ -40,71 +40,71 @@ $trie_tree = array(
 ```php
 <?php
 class TrieTreeNode {
-	public $h = array();
-	public $b = false;	
+    public $h = array();
+    public $b = false;    
 }
 >
 class TrieTree {
-	private $root;
+    private $root;
 >
-	public function __construct() {
-		$this->root = new TrieTreeNode();
-	}
+    public function __construct() {
+        $this->root = new TrieTreeNode();
+    }
 >
-	public function init($file) {
-		$fp = fopen($file, 'r');
-		while (($buffer = fgets($fp)) != null) {
-			//插入一个词
-			$node = $this->root;
-			$w = trim($buffer);
-			$len = strlen($w);
-			for ($i = 0; $i < $len; $i++) {
-				//插入每一个字节
-				$c = $w[$i];
-				//如果不存在对应的节点则进行插入
-				if (!array_key_exists($c, $node->h)) {
-					$next = new TrieTreeNode();
-					$node->h[$c] = $next;
-					$node = $next;
-				} else {
-					$node = $node->h[$c];
-				}
-			}
-			$node->b = true;
-		}
-	}
+    public function init($file) {
+        $fp = fopen($file, 'r');
+        while (($buffer = fgets($fp)) != null) {
+            //插入一个词
+            $node = $this->root;
+            $w = trim($buffer);
+            $len = strlen($w);
+            for ($i = 0; $i < $len; $i++) {
+                //插入每一个字节
+                $c = $w[$i];
+                //如果不存在对应的节点则进行插入
+                if (!array_key_exists($c, $node->h)) {
+                    $next = new TrieTreeNode();
+                    $node->h[$c] = $next;
+                    $node = $next;
+                } else {
+                    $node = $node->h[$c];
+                }
+            }
+            $node->b = true;
+        }
+    }
 >
-	protected function _match($text, $pos) {
-		$len = strlen($text);
-		//如果匹配位置已超过文本长度，则匹配失败
-		if ($pos >= $len) {
-			return false;
-		}
-		$node = $this->root;
-		$match = '';
-		for ($i = $pos; $i < $len; $i++) {
-			$c = $text[$i];
-			if (array_key_exists($c, $node->h)) {
-				$match .= $c;
-				$next = $node->h[$c];
-				$node = $next;
-				//匹配到结束为止，返回结果
-				if ($next->b) {
-					//匹配的词和匹配的位置
-					return array('w' => $match, 'p' => $pos);
-				}
-			} else {
-				//已到达TrieTree末端还未完成匹配，则退出后重新开始匹配
-				break;
-			}
-		}
-		//递归匹配
-		return $this->_match($text, $i > $pos ? $i : $pos + 1);
-	}
+    protected function _match($text, $pos) {
+        $len = strlen($text);
+        //如果匹配位置已超过文本长度，则匹配失败
+        if ($pos >= $len) {
+            return false;
+        }
+        $node = $this->root;
+        $match = '';
+        for ($i = $pos; $i < $len; $i++) {
+            $c = $text[$i];
+            if (array_key_exists($c, $node->h)) {
+                $match .= $c;
+                $next = $node->h[$c];
+                $node = $next;
+                //匹配到结束为止，返回结果
+                if ($next->b) {
+                    //匹配的词和匹配的位置
+                    return array('w' => $match, 'p' => $pos);
+                }
+            } else {
+                //已到达TrieTree末端还未完成匹配，则退出后重新开始匹配
+                break;
+            }
+        }
+        //递归匹配
+        return $this->_match($text, $i > $pos ? $i : $pos + 1);
+    }
 >
-	public function match($text) {
-		return $this->_match($text, 0);
-	}
+    public function match($text) {
+        return $this->_match($text, 0);
+    }
 }
 ```
 > 其时间复杂度只与关键词长（TrieTree高度）和待匹配的文本长度有关，与关键词的个数无关，在关键词非常多时仍能保持较好的性能。但TrieTree的生成过程与关键词的个数有关，如果每次匹配都重新生成TrieTree会丧失TrieTree算法的优势，因此通常可以将生成的TrieTree保持住，可以使用服务化或是将TrieTree结构进行序列化来避免每次重新生成。
@@ -120,9 +120,9 @@ $tree->init($argv[1]);
 >
 $http = new swoole_http_server("0.0.0.0", 9501);
 $http->on('request', function ($request, $response) use($tree) {
-	$args = $request->get;
-	$match = $tree->match($args['c']);
-	$response->end(json_encode($match));
+    $args = $request->get;
+    $match = $tree->match($args['c']);
+    $response->end(json_encode($match));
 });
 $http->start();
 ```

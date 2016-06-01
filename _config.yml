@@ -1,5 +1,6 @@
-highlighter: pygments
-markdown: redcarpet
+highlighter: rouge
+markdown: kramdown
 github: [Repository metadata]
 paginate: 2
 paginate_path: "page:num"
+gems: [jekyll-paginate]
