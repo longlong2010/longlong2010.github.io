@@ -6,11 +6,10 @@ layout: post
 > MySQL 5.7终于要发布正式版本了，相比MySQL 5.6，MySQL 5.7除了提升性能外增加了非常多的新功能，具体可以参考[官方手册](http://dev.mysql.com/doc/refman/5.7/en/mysql-nutshell.html)，其中主要有在线DDL（相比5.6增加了索引重命名），空间数据类型索引，原生JSON数据类型，多源复制，多线程复制等。
 
 #### 1. 特性变更
-
+>
 > 新版本中对老版本的一些特性进行了调整，有些不再支持，有些则不建议再使用，以下只列出一些比较常见的，具体可以参考手册。
 >
 ##### 1) mysql\_install\_table
-
 > mysql\_install\_table命令不建议在使用，建议改用mysqld --initialize，运行时会有以下提示
 >
 ```
@@ -23,21 +22,19 @@ mysqld --initialize --user=mysql \
          --basedir=/opt/mysql/mysql \
 	     --datadir=/opt/mysql/mysql/data
 ```
+>
 ##### 2) InnoDB不能被禁用
-
 > 由于系统表已经改用InnoDB，因此不能再禁用InnoDB引擎，--skip-innodb，--disable-innodb等配置将被忽略。
 >
 ##### 3) YEAR(2)类型将不再支持
-
 > YEAR(2)类型不再支持，需要升级为YEAR(4)，如果使用会提示以下错误
 >
 ```
 ERROR 1818 (HY000): Supports only YEAR or YEAR(4) column.
 ```
+>
 ##### 4) 配置参数变化
-
 > 参数storage\_engine变量替换为default\_storage\_engine
-
 > 参数innodb\_use\_sys\_malloc 和innodb\_additional\_mem\_pool\_size不再支持
 
 #### 2. 多源复制
@@ -213,7 +210,6 @@ ALTER TABLE CodeData MODIFY code varchar(64) NOT NULL;
 Query OK, 0 rows affected (0.07 sec)
 Records: 0  Duplicates: 0  Warnings: 0
 ```
-
 > 如果再将code字段的长度增加到256，例如
 >
 ```mysql

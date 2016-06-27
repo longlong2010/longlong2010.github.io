@@ -29,201 +29,201 @@ import java.util.Scanner;
 import java.util.ArrayList;
 >
 class Sudoku {
-	private int[][] matrix;
-	final int SIZE = 9;
+    private int[][] matrix;
+    final int SIZE = 9;
 >
-	public Sudoku() {
-		matrix = new int[SIZE][SIZE];
-	}
+    public Sudoku() {
+        matrix = new int[SIZE][SIZE];
+    }
 >
-	//复制一个数独，便于新的数独问题的生成
-	public Sudoku(Sudoku s) {
-		this();
-		int size = SIZE;
-		for (int i = 0; i < size; i++) {
-			for (int j = 0; j < size; j++) {
-				set(i, j, s.get(i, j));
-			}
-		}
-	}
+    //复制一个数独，便于新的数独问题的生成
+    public Sudoku(Sudoku s) {
+        this();
+        int size = SIZE;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                set(i, j, s.get(i, j));
+            }
+        }
+    }
 >
-	//读写数独方格
-	public void set(int i, int j, int v) {
-		matrix[i][j] = v;
-	}
+    //读写数独方格
+    public void set(int i, int j, int v) {
+        matrix[i][j] = v;
+    }
 >
-	public int get(int i, int j) {
-		return matrix[i][j];
-	}
+    public int get(int i, int j) {
+        return matrix[i][j];
+    }
 >
-	//根据目前的数字，利用约束填写其他的方格直到无法找到可以填写的方格为止
-	private boolean calculate() {
-		int size = SIZE;
-		int n;
-		//遍历全部的方法，如果能够找到可以填写的方格，则进行进行遍历知道无法找到为止
-		do {
-			n = 0;
-			for (int i = 0; i < size; i++) {
-				for (int j = 0; j < size; j++) {
-					//如果已经填写了数字则不进行分析
-					if (get(i, j) != 0) {
-						continue;
-					}
-					//获取可以填写的数字
-					ArrayList<Integer> nums = getAvailNums(i, j);
-					int s = nums.size();
-					//如果是唯一的，则进行填写，并记录找到一个方格
-					if (s == 1) {
-						int v = nums.get(0);
-						set(i, j, v);
-						n++;
-					}
-					//如果找到一个不能填写任何数字的方格则返回求解失败
-					if (s == 0) {
-						return false;
-					}
-				}
-			}
-		} while (n > 0);
-		//遍历完成返回遍历成功
-		return true;
-	}
+    //根据目前的数字，利用约束填写其他的方格直到无法找到可以填写的方格为止
+    private boolean calculate() {
+        int size = SIZE;
+        int n;
+        //遍历全部的方法，如果能够找到可以填写的方格，则进行进行遍历知道无法找到为止
+        do {
+            n = 0;
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    //如果已经填写了数字则不进行分析
+                    if (get(i, j) != 0) {
+                        continue;
+                    }
+                    //获取可以填写的数字
+                    ArrayList<Integer> nums = getAvailNums(i, j);
+                    int s = nums.size();
+                    //如果是唯一的，则进行填写，并记录找到一个方格
+                    if (s == 1) {
+                        int v = nums.get(0);
+                        set(i, j, v);
+                        n++;
+                    }
+                    //如果找到一个不能填写任何数字的方格则返回求解失败
+                    if (s == 0) {
+                        return false;
+                    }
+                }
+            }
+        } while (n > 0);
+        //遍历完成返回遍历成功
+        return true;
+    }
 >
-	//数独求解主流程
-	public boolean solve() {
-		int size = SIZE;
-		//根据约束条件填写方格，如果失败则整个求解流程失败
-		if (!calculate()) {
-			return false;
-		}
-		//遍历整个方格没有填写的方格，直到全部填写完成为止
-		int n;
-		do {
-			n = 0;
-			for (int i = 0; i < size; i++) {
-				for (int j = 0; j < size; j++) {
-					//如果已经填写则增加计数
-					if (get(i, j) != 0) {
-						n++;
-						continue;
-					}
-					//直到当前方格中可以填写的数字
-					ArrayList<Integer> nums = getAvailNums(i, j);
-					int s = nums.size();
-					//如果已经没有可以填写的数字，则返回求解失败
-					if (s == 0) {
-						return false;
-					}
-					//对于每一个可以填写的数字，生成一个新的数独问题，递归进行求解
-					for (int k = 0; k < s; k++) {
-						Sudoku ns = new Sudoku(this);
-						ns.set(i, j, nums.get(k));
-						//如果求解成功，则保存答案，返回成功
-						if (ns.solve()) {
-							for (int p = 0; p < size; p++) {
-								for (int q = 0; q < size; q++) {
-									set(p, q, ns.get(p, q));
-								}
-							}
-							return true;
-						}
-					}
-					//如果全部尝试后依然无法得到解答，则求解失败
-					return false;
-				}
-			}
-		} while (n != size * size);
-		//全部填满则返回求解成功
-		return true;
-	}
+    //数独求解主流程
+    public boolean solve() {
+        int size = SIZE;
+        //根据约束条件填写方格，如果失败则整个求解流程失败
+        if (!calculate()) {
+            return false;
+        }
+        //遍历整个方格没有填写的方格，直到全部填写完成为止
+        int n;
+        do {
+            n = 0;
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    //如果已经填写则增加计数
+                    if (get(i, j) != 0) {
+                        n++;
+                        continue;
+                    }
+                    //直到当前方格中可以填写的数字
+                    ArrayList<Integer> nums = getAvailNums(i, j);
+                    int s = nums.size();
+                    //如果已经没有可以填写的数字，则返回求解失败
+                    if (s == 0) {
+                        return false;
+                    }
+                    //对于每一个可以填写的数字，生成一个新的数独问题，递归进行求解
+                    for (int k = 0; k < s; k++) {
+                        Sudoku ns = new Sudoku(this);
+                        ns.set(i, j, nums.get(k));
+                        //如果求解成功，则保存答案，返回成功
+                        if (ns.solve()) {
+                            for (int p = 0; p < size; p++) {
+                                for (int q = 0; q < size; q++) {
+                                    set(p, q, ns.get(p, q));
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                    //如果全部尝试后依然无法得到解答，则求解失败
+                    return false;
+                }
+            }
+        } while (n != size * size);
+        //全部填满则返回求解成功
+        return true;
+    }
 >
-	//获取当前方格中可以填写的数字
-	public ArrayList<Integer> getAvailNums(int i, int j) {
-		int size = SIZE;
-		//分析行和列
-		ArrayList<Integer> nums = getNums();
-		for (int k = 0; k < size; k++) {
-			int index;
-			int v1 = matrix[i][k];
-			if ((index = nums.indexOf(v1)) != -1) {
-				nums.remove(index);
-			}
-			int v2 = matrix[k][j];
-			if ((index = nums.indexOf(v2)) != -1) {
-				nums.remove(index);
-			}
-		}
+    //获取当前方格中可以填写的数字
+    public ArrayList<Integer> getAvailNums(int i, int j) {
+        int size = SIZE;
+        //分析行和列
+        ArrayList<Integer> nums = getNums();
+        for (int k = 0; k < size; k++) {
+            int index;
+            int v1 = matrix[i][k];
+            if ((index = nums.indexOf(v1)) != -1) {
+                nums.remove(index);
+            }
+            int v2 = matrix[k][j];
+            if ((index = nums.indexOf(v2)) != -1) {
+                nums.remove(index);
+            }
+        }
 >
-		int ssize = (int) Math.sqrt(size);
+        int ssize = (int) Math.sqrt(size);
 >
-		//分析子方格
-		int m = i / ssize;
-		int n = j / ssize;
-		for (int p = m * ssize; p < (m + 1) * ssize; p++) {
-			for (int q = n * ssize; q < (n + 1) * ssize; q++) {
-				int index;
-				int v = matrix[p][q];
-				if ((index = nums.indexOf(v)) != -1) {
-					nums.remove(index);
-				}
-			}
-		}
-		return nums;
-	}
+        //分析子方格
+        int m = i / ssize;
+        int n = j / ssize;
+        for (int p = m * ssize; p < (m + 1) * ssize; p++) {
+            for (int q = n * ssize; q < (n + 1) * ssize; q++) {
+                int index;
+                int v = matrix[p][q];
+                if ((index = nums.indexOf(v)) != -1) {
+                    nums.remove(index);
+                }
+            }
+        }
+        return nums;
+    }
 >
-	private ArrayList<Integer> getNums() {
-		int size = SIZE;
-		ArrayList<Integer> nums = new ArrayList<Integer>();
-		for (int k = 0; k < size; k++) {
-			nums.add(k + 1);
-		}
-		return nums;
-	}
+    private ArrayList<Integer> getNums() {
+        int size = SIZE;
+        ArrayList<Integer> nums = new ArrayList<Integer>();
+        for (int k = 0; k < size; k++) {
+            nums.add(k + 1);
+        }
+        return nums;
+    }
 >
-	//从文件加载数独
-	public void load(String file) {
-		int size = SIZE;
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(new File(file)));
-			for (int i = 0; i < size; i++) {
-				String line = reader.readLine();
-				if (line == null) {
-					break;
-				}
-				Scanner in = new Scanner(line);
-				for (int j = 0; j < size; j++) {
-					if (!in.hasNext()) {
-						break;
-					}
-					matrix[i][j] = in.nextInt();
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-	}
+    //从文件加载数独
+    public void load(String file) {
+        int size = SIZE;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(new File(file)));
+            for (int i = 0; i < size; i++) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                Scanner in = new Scanner(line);
+                for (int j = 0; j < size; j++) {
+                    if (!in.hasNext()) {
+                        break;
+                    }
+                    matrix[i][j] = in.nextInt();
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 >
-	//输出数独方格情况
-	public void print() {
-		int size = SIZE;
-		for (int i = 0; i < SIZE; i++) {
-			for (int j = 0; j < SIZE; j++) {
-				System.out.printf("%d ", matrix[i][j]);
-			}
-			System.out.println();
-		}
-	}
+    //输出数独方格情况
+    public void print() {
+        int size = SIZE;
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                System.out.printf("%d ", matrix[i][j]);
+            }
+            System.out.println();
+        }
+    }
 >
-	//程序入口
-	public static void main(String[] args) {
-		Sudoku s = new Sudoku();
-		s.load(args[0]);
-		s.print();
-		System.out.println();
+    //程序入口
+    public static void main(String[] args) {
+        Sudoku s = new Sudoku();
+        s.load(args[0]);
+        s.print();
+        System.out.println();
 >
-		s.solve();
-		s.print();
-	}
+        s.solve();
+        s.print();
+    }
 }
 ```
 >
