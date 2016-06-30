@@ -126,7 +126,7 @@ $http->on('request', function ($request, $response) use($tree) {
 });
 $http->start();
 ```
-
+>
 > 使用时将待匹配的文本通过URL参数c进行传递，如果文本较长则可以使用POST来实现。
 >
 ```

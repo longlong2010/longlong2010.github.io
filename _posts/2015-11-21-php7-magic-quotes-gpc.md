@@ -31,7 +31,7 @@ PHPAPI char *php_addslashes(char *str, int length, int *new_length, int freeit T
 //PHP 7
 PHPAPI zend_string *php_addslashes(zend_string *str, int should_free);
 ```
-
+>
 > PHP 7中定义了zend\_string数据类型，替代了原来使用的char\*，相比之下其在内存申请和释放的操作更加简单，如下是初始化一个zend\_string的方法
 >
 ```c
@@ -39,7 +39,7 @@ zend_string* zstr = zend_string_init(*val, val_len, 0);
 >
 zend_string_init("magic_quotes_gpc", sizeof("magic_quotes_gpc") - 1, 0);
 ```
-
+>
 > 另外PHP 7中动态修改配置的方法zend\_alter\_ini\_entry\_ex的参数列表也发生了变化，其中主要也是将一些参数改为了zend\_string
 >
 ```c
@@ -301,11 +301,11 @@ diff -Nur php-7.0.0RC8/sapi/fpm/fpm/fpm_main.c php-7.0.0RC8-patched/sapi/fpm/fpm
 print_r($_GET);
 print_r(PHP_VERSION);
 ```
-
+>
 > 会得到以下输出
 >
 ```
 Array ( [v\"] => \'\\1\' ) 7.0.0RC7
 ```
-
+>
 > 可以看到其自动对单引号、双引号、反斜杠都增加了转义，实现了Magic Quotes GPC的作用。虽然官方已经不再建议用这个功能，但为了能够尽快的升级PHP 7，如果一直等待代码的修改完成恐怕就要等到PHP 8了。

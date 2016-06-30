@@ -64,6 +64,8 @@ else
                              pointer_index - 1); 
 } 
 ```
+>
+
 #### 3. 带权重的一致性散列算法
 
 > 在xmemcached中带权重的一致性散列算法的处理方法是将当前节点的虚节点个数（默认为160）直接乘以其权重，而在libmemcached中除了乘以了权重之外，还乘以了总节点个数/总权重值（好处是只要各节点权重比相同，散列的结果就是相同的）。为了保证散列结果的一致性，需要修改xmemcached的源代码（或者增加一个散列算法类型 AbstractMemcachedSessionLocator），其patch如下

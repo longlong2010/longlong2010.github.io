@@ -40,7 +40,7 @@ ERROR 1818 (HY000): Supports only YEAR or YEAR(4) column.
 #### 2. 多源复制
 
 > 多源复制是一个非常好用的特性，可以用在做数据的汇总——将多个MySQL的数据汇总到一个MySQL中，同时也可以利用多源复制提升MySQL复制的性能，在MySQL 5.7之前一只使用Mariadb 10的多源复制特性，其两者在使用和语法上稍有区别，这里只介绍MySQL 5.7中的多源复制语法。具体细节可以参考[官方手册](http://dev.mysql.com/doc/refman/5.7/en/replication-multi-source.html)
-
+>
 > 在使用多源复制特性前需要先修改MySQL存储master-info和relay-info的方式，即从文件存储改为表存储，修改配置文件如下
 >
 ```ini
@@ -74,7 +74,7 @@ SELECT * FROM replication_connection_status;
 #### 3. 原生JSON数据类型
 
 > MySQL 5.7中提供了对JSON数据类型的支持，并且其不仅是能够对JSON数据的格式进行验证，还可以支持一些类似与MongoDB的操作方式，以及对JSON数据进行索引。
-
+>
 > 例如建立一个包含JSON数据类型的表
 >
 ```mysql

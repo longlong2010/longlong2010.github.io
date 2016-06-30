@@ -4,12 +4,13 @@ layout: post
 ---
 
 > 经过多年的积累和完善，Nginx已经是和Apache一样成为了一种最为常见的Web服务器，其因其使用基于事件的io模型能够承受大量的连接数，同时只占用很小的内存，灵活的配置文件以及丰富的第三方模块得到了越来越多的应用。
-
+>
 > 同时目前Nginx + PHP-FPM已经基本上取代了Apache + Mod-PHP成为了PHP运行环境的主流。但存在一个比较常见的误区，就是Nginx + PHP-FPM的性能要远远高于Apache + Mod-PHP，但事实并不是这样，本质上影响性能的是PHP的执行，而且PHP-FPM的运行模型和Apache基本上是类似的——都是prefork的方式，而这才是性能的瓶颈。个人感觉Nginx + PHP-FPM性能好于Apache主要是由于默认安装的Apache加载了大量无用的模块，同时如果没有做动态静态分离，Nginx在处理静态内容时会有很大的优势。
 
 #### 1. Rewrite配置
 
 > 作为Web服务器，最为常用的配置就是URL的重写，即Rewrite配置，Nginx的Rewrite相对Apache感觉更加简单，同时使用的是PCRE正则书写起来也更加容易一些。这里主要说几个常见的问题
+
 ##### 1) MVC入口Rewrite
 
 > 一般使用过Apache Rewrite，都习惯写成
@@ -21,7 +22,7 @@ location / {
 	}
 }
 ```
-
+>
 > 而如果使用了新版本的Nginx则建议使用try\_files语法
 >
 ```nginx
@@ -29,6 +30,7 @@ location / {
 	try_files $uri $uri/ /index.php?q=$uri&$args;
 }
 ```
+
 ##### 2) 整个域名跳转
 
 > 经常会遇到将整个域名跳转到另外一个域名并且uri不变的情况，一般较为常见的写法是
@@ -46,10 +48,11 @@ location / {
 	return 301 $scheme://xxx.com$request_uri;
 }
 ```
+
 ##### 3) break和last的区别
 
 > break是当匹配了当前的Rewrite规则后不再执行后面紧跟的Rewrite规则，但会进行执行当前location中的其它配置，而last则是当匹配了当前的Rewrite规则后不再执行后面紧跟的Rewrite规则同时跳出当前的location，根据重写后的uri再进行一次新的location匹配。
-
+>
 > 例如
 >
 ```nginx
@@ -76,8 +79,9 @@ location /app/ {
 }
 ```
 > 会在uri中无限的增加/new/
-##### 4) 嵌套if
 
+##### 4) 嵌套if
+>
 > Nginx的配置是原生不能支持if的嵌套的，但可以通过变通的方法实现类似的效果——将一个变量进行多次赋值，通过最后的结果再进行判断
 >
 ```nginx
