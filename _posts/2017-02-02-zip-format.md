@@ -8,6 +8,7 @@ layout: post
 > Zip文件是将多个文件按照顺序进行排列，每个文件包括文件头和文件内容，其结构如下图所示
 >
 <img alt="" src="//upload.wikimedia.org/wikipedia/commons/thumb/6/63/ZIP-64_Internal_Layout.svg/400px-ZIP-64_Internal_Layout.svg.png" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/6/63/ZIP-64_Internal_Layout.svg/600px-ZIP-64_Internal_Layout.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/6/63/ZIP-64_Internal_Layout.svg/800px-ZIP-64_Internal_Layout.svg.png 2x" data-file-width="972" data-file-height="527" width="400" height="217">
+>
 > 其中每个文件头部分包括签名（固定值0x04034b50），解包需要的Zip版本，通用标志位，压缩方法，文件最后修改时间，文件最后修改日期，CRC-32校验值，压缩后的文件大小，压缩前的文件大小，文件名长度，扩展域长度，文件名，扩展域。其中获取一些文件头部分的代码如下所示
 >
 ```php
@@ -87,4 +88,33 @@ $y = date('Y') - 1980;
 $m = date('n');
 $d = date('j');
 $v2 = pack('s', ($y << 9) + ($m << 5) + $d);
+>
+$data = $v1 . $v2;
 ```
+
+#### 3. 使用实例
+
+> 在Nginx向用户发送Zip文件时，使用Lua的body filter修改Zip文件中第一个文件的最后修改时间为当前时间，其中需要使用到Lua的struct模块
+>
+```nginx
+        location ~ \.zip$ {
+            #记录当前chunked号
+            set $c "0";
+            header_filter_by_lua_block { ngx.header.content_length = nil }
+            body_filter_by_lua_block {
+                local struct = require("struct");
+                --获取当前时间
+                local t = os.date("*t");
+                --生成MS-DOS格式的时间日期
+                local v2 = struct.pack("I2", (t["year"] - 1980) * 2^9 + t["month"] * 2^5 + t["day"]);
+                local v1 = struct.pack("I2", t["hour"] * 2^11 + t["min"] * 2^5 + math.floor(t["sec"] / 2));
+                --替换第一个文件的最后修改时间
+                if ngx.var.c == "0" then
+                    ngx.arg[1] = string.sub(ngx.arg[1], 1, 10) .. v1 .. v2 .. string.sub(ngx.arg[1], 15, -1);
+                end
+                ngx.var.c = ngx.var.c + 1;
+            }
+        }
+```
+>
+> 如此就能够动态的修改Zip包中的一些内容而不需要每次都重新打包，能够较大程度提高Web服务器的效率。
