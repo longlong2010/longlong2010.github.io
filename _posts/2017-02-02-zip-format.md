@@ -75,7 +75,7 @@ $y = (($v[1] & (0b1111111) << 9) >> 9) + 1980;
 $m = ($v[1] & (0b1111) << 5) >> 5;
 $d = ($v[1] & (0b11111));
 ```
-> 其编码的程序如下
+> 其编码的代码如下
 >
 ```php
 <?php
@@ -94,7 +94,7 @@ $data = $v1 . $v2;
 
 #### 3. 使用实例
 
-> 在Nginx向用户发送Zip文件时，使用Lua的body filter修改Zip文件中第一个文件的最后修改时间为当前时间，其中需要使用到Lua的struct模块
+> 在Nginx向用户发送Zip文件时，使用Lua的body filter修改Zip文件中第一个文件的最后修改时间为当前时间，其中需要使用到Lua的[struct模块](http://www.inf.puc-rio.br/~roberto/struct/struct-0.2.tar.gz)
 >
 ```nginx
         location ~ \.zip$ {
@@ -102,6 +102,7 @@ $data = $v1 . $v2;
             set $c "0";
             header_filter_by_lua_block { ngx.header.content_length = nil }
             body_filter_by_lua_block {
+                --加载struct模块
                 local struct = require("struct");
                 --获取当前时间
                 local t = os.date("*t");
