@@ -97,11 +97,15 @@ $data = $v1 . $v2;
 > 在Nginx向用户发送Zip文件时，使用Lua的body filter修改Zip文件中第一个文件的最后修改时间为当前时间，其中需要使用到Lua的[struct模块](http://www.inf.puc-rio.br/~roberto/struct/struct-0.2.tar.gz)
 >
 ```nginx
-        location ~ \.zip$ {
-            #记录当前chunked号
-            set $c "0";
-            header_filter_by_lua_block { ngx.header.content_length = nil }
-            body_filter_by_lua_block {
+    location ~ \.zip$ {
+        #记录当前chunked号
+        set $c "0";
+        header_filter_by_lua_block { 
+            ngx.header.content_length = nil;
+        }
+        body_filter_by_lua_block {
+            --替换第一个文件的最后修改时间
+            if ngx.var.c == "0" then
                 --加载struct模块
                 local struct = require("struct");
                 --获取当前时间
@@ -109,13 +113,48 @@ $data = $v1 . $v2;
                 --生成MS-DOS格式的时间日期
                 local v2 = struct.pack("I2", (t["year"] - 1980) * 2^9 + t["month"] * 2^5 + t["day"]);
                 local v1 = struct.pack("I2", t["hour"] * 2^11 + t["min"] * 2^5 + math.floor(t["sec"] / 2));
-                --替换第一个文件的最后修改时间
-                if ngx.var.c == "0" then
-                    ngx.arg[1] = string.sub(ngx.arg[1], 1, 10) .. v1 .. v2 .. string.sub(ngx.arg[1], 15, -1);
-                end
-                ngx.var.c = ngx.var.c + 1;
-            }
+                ngx.arg[1] = string.sub(ngx.arg[1], 1, 10) .. v1 .. v2 .. string.sub(ngx.arg[1], 15, -1);
+            end
+            ngx.var.c = ngx.var.c + 1;
         }
+    }
 ```
 >
 > 如此就能够动态的修改Zip包中的一些内容而不需要每次都重新打包，能够较大程度提高Web服务器的效率。
+
+#### 4. 补充
+> 以上的配置中取消了Content-Length头，会导致不能够支持断点续传，为了能够继续支持断点续传需要对请求中的Range头进行简要的分析，并做出对应的处理，处理后的配置如下
+>
+```nginx
+    location ~ \.zip$ {
+        set $c "0";
+        body_filter_by_lua_block {
+            --替换第一个文件的最后修改时间
+            if ngx.var.c == "0" then
+                --设置Range的默认起止位置
+                local s1 = 0;
+                local s2 = ngx.header.content_length;
+                if ngx.var.http_range then
+                    --分析Range头
+                    local m = ngx.re.match(ngx.var.http_range, "bytes=(\\d+)-(\\d+)?");
+                    --如果匹配成功则更新起止位置
+                    if m then
+                        s1 = tonumber(m[1]);
+                        if m[2] then
+                            s2 = tonumber(m[2]);
+                        end
+                    end
+                end
+                --需要更新的时间值在当前的范围内时，则进行修改
+                if s1 < 10 and s2 > 15 then
+                    local struct = require("struct");
+                    local t = os.date("*t");
+                    local v2 = struct.pack("I2", (t["year"] - 1980) * 2^9 + t["month"] * 2^5 + t["day"]);
+                    local v1 = struct.pack("I2", t["hour"] * 2^11 + t["min"] * 2^5 + math.floor(t["sec"] / 2));
+                    --调整修改的位置
+                    ngx.arg[1] = string.sub(ngx.arg[1], 1, 10 - s1) .. v1 .. v2 .. string.sub(ngx.arg[1], 15 - s1, -1);
+                end
+            end
+            ngx.var.c = ngx.var.c + 1;
+        }
+```
