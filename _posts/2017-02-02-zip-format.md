@@ -123,9 +123,16 @@ $data = $v1 . $v2;
 > 如此就能够动态的修改Zip包中的一些内容而不需要每次都重新打包，能够较大程度提高Web服务器的效率。
 
 #### 4. 补充
-> 以上的配置中取消了Content-Length头，会导致不能够支持断点续传，为了能够继续支持断点续传需要对请求中的Range头进行简要的分析，并做出对应的处理，处理后的配置如下
+> 以上的配置中取消了Content-Length头，会导致不能够支持断点续传，为了能够继续支持断点续传需要对请求中的Range头进行简要的分析，并做出对应的处理，同时在文件的结尾增加一段随机的注释字符串，处理后的配置如下
 >
 ```nginx
+#将加载Lua模块放在Nginx初始化阶段
+init_by_lua_block {
+   struct = require("struct");
+}
+>
+server {
+    #....
     location ~ \.zip$ {
         set $c "0";
         body_filter_by_lua_block {
@@ -147,7 +154,6 @@ $data = $v1 . $v2;
                 end
                 --需要更新的时间值在当前的范围内时，则进行修改
                 if s1 < 10 and s2 > 15 then
-                    local struct = require("struct");
                     local t = os.date("*t");
                     local v2 = struct.pack("I2", (t["year"] - 1980) * 2^9 + t["month"] * 2^5 + t["day"]);
                     local v1 = struct.pack("I2", t["hour"] * 2^11 + t["min"] * 2^5 + math.floor(t["sec"] / 2));
@@ -155,6 +161,12 @@ $data = $v1 . $v2;
                     ngx.arg[1] = string.sub(ngx.arg[1], 1, 10 - s1) .. v1 .. v2 .. string.sub(ngx.arg[1], 15 - s1, -1);
                 end
             end
+            --如果到达结尾部分补充一段随机的注释字符串（原始Zip文件尾部不能有注释）
+            if ngx.arg[2] == true then
+                ngx.arg[1] = string.sub(ngx.arg[1], 1, -3) .. struct.pack("I2", 32) .. ngx.md5(math.random());
+            end
             ngx.var.c = ngx.var.c + 1;
         }
+    }
+}
 ```
