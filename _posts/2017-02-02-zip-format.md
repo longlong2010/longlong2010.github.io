@@ -123,7 +123,7 @@ $data = $v1 . $v2;
 > 如此就能够动态的修改Zip包中的一些内容而不需要每次都重新打包，能够较大程度提高Web服务器的效率。
 
 #### 4. 补充
-> 以上的配置中取消了Content-Length头，会导致不能够支持断点续传，为了能够继续支持断点续传需要对请求中的Range头进行简要的分析，并做出对应的处理，同时在文件的结尾增加一段随机的注释字符串，处理后的配置如下
+> 以上的配置中取消了Content-Length头，会导致不能够支持断点续传，为了能够继续支持断点续传需要对请求中的Range头进行简要的分析，并做出对应的处理，同时替换文件尾部的一段随机注释字符串，处理后的配置如下
 >
 ```nginx
 #将加载Lua模块放在Nginx初始化阶段
@@ -161,9 +161,26 @@ server {
                     ngx.arg[1] = string.sub(ngx.arg[1], 1, 10 - s1) .. v1 .. v2 .. string.sub(ngx.arg[1], 15 - s1, -1);
                 end
             end
-            --如果到达结尾部分补充一段随机的注释字符串（原始Zip文件尾部不能有注释）
+            --替换文件尾部的一段随机注释字符串（需要源文件尾部有一段32字节长度的注释字符）
             if ngx.arg[2] == true then
-                ngx.arg[1] = string.sub(ngx.arg[1], 1, -3) .. struct.pack("I2", 32) .. ngx.md5(math.random());
+                if ngx.header.content_range then
+                    local m = ngx.re.match(ngx.header.content_range, "bytes (\\d+)-(\\d+)/(\\d+)");
+                    if m then
+                        local m2 = tonumber(m[2]);
+                        local m1 = m2 - string.len(ngx.arg[1]) + 1;
+                        local m3 = tonumber(m[3]);
+                        if m2 >= m3 - 32 then
+                            local s = ngx.md5(math.random());
+                            if m1 >= m3 - 32 then
+                                ngx.arg[1] = string.sub(s, 1, m2 - m1 + 1);
+                            else
+                                ngx.arg[1] = string.sub(ngx.arg[1], 1, -1 - (33 + m2 - m3)) .. string.sub(s, 1, m2 - m3);
+                            end
+                        end
+                    end
+                else
+                    ngx.arg[1] = string.sub(ngx.arg[1], 1, -33) .. ngx.md5(math.random());
+                end
             end
             ngx.var.c = ngx.var.c + 1;
         }
