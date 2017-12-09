@@ -112,3 +112,18 @@ chmod +x gitlab
 /home/git/gitlab/gitlab start
 ```
 > 第一次运行时会比较慢一些需要耐心等待一下，默认的用户名和密码为admin@example.com/password
+
+#### 7. 修改gitlab的merge行为
+
+> gitlab的Merge Request使用的是--no-ff方式的进行merge的，如果合并的分支的commit记录比较乱就会导致合并之后主分支的commit记录也比较混乱，如果想将其改为--squash的方式，需要修改gitlab源代码的一个文件gitlab/lib/gitlab/git/repository.rb，如下修改rugged\_merge方法即可
+>
+```ruby
+options = {
+	#parents: [our_commit, their_commit],
+	parents: [our_commit],
+	tree: merge_index.write_tree(rugged),
+	message: message,
+	author: committer,
+	committer: committer
+}
+```
