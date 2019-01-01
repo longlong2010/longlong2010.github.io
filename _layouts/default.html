@@ -20,10 +20,10 @@
 		  <nav>
             <ul class="pager">
               {% if paginator.previous_page %}
-			  <li><a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">Previous</a></li>
+			  <li><a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}/">Previous</a></li>
 			  {% endif %}
 			  {% if paginator.next_page %}
-              <li><a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Next</a></li>
+              <li><a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}/">Next</a></li>
 			  {% endif %}
             </ul>
           </nav>
