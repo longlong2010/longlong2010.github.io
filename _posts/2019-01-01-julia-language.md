@@ -54,7 +54,7 @@ M2 = M^-1;
 
 #### 3. 自定义类型
 
-> Julia中并不支持Python中的面向对象的方式定义类型，而是定义类型和类型的静态方法，并可以重载定义的方法，在定义的类型前增加mutable可使得内部的数据是可修改的
+> Julia中并不支持Python中的面向对象的方式定义类型，而是定义类型和类型的静态方法（可以将静态方法的第一个参数设定为对应类型的引用实现类似成员方法的效果），并可以重载定义的方法，在定义的类型前增加mutable可使得内部的数据是可修改的
 >
 ```julia
 #定义一种抽象类型
@@ -71,6 +71,15 @@ end
 function add(v1::A, v2::A)
     return v1.x + v2.x;
 end
+#定义类似其他语言中成员方法
+function show(self::A) {
+    println(self.x);
+}
+#对于子类型B重载show方法
+function show(self::B) {
+    println("B:");
+    println(self.x);
+}
 ```
 
 #### 4. 包管理
