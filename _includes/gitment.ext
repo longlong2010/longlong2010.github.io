@@ -1,0 +1,16 @@
+	<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+	<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+	<div id="comments"></div>
+	<script type="text/javascript">
+	const gitment = new Gitment({
+		id: '{{ page.url }}', // optional
+		owner: 'longlong2010',
+		repo: 'longlong2010.github.io',
+		oauth: {
+			client_id: '785966072b5957f7fbd6',
+			client_secret: '480b9c52f04cda1b11d199dd7c457f4560f64366'
+		}
+	});
+	gitment.render('comments')
+	</script>
+
