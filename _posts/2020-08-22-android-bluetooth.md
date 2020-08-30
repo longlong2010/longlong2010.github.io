@@ -27,7 +27,7 @@ public class BluetoothService extends Service {
 startService(new Intent(getBaseContext(), BluetoothService.class));
 ```
 
-#### 2. Android中启动蓝牙
+#### 2. 启动蓝牙
 > 首先需要在App中设置访问设备蓝牙的权限，在AndroidManifest.xml中增加以下权限申请
 >
 ```xml
@@ -113,7 +113,53 @@ new Thread(new Runnable() {
 }).start();
 ```
 
-#### 5. 实现蓝牙的Client
+#### 5. 通过RPC与蓝牙Service通信
+>
+> 可以在蓝牙Service中再启动一个HTTP Server，然后通过HTTP进行RPC，同时在接到RPC调用后需要使用建立的蓝牙连接则需要对蓝牙Server和HTTP Server之间对连接操作进行同步。大致方法就是将建立的蓝牙连接保存在一个Set容器中，将此容器做为两个线程的共享对象，并以此进行操作连接的同步。具体实现如下
+>
+```java
+//实例化共享的连接集合
+final Set<BluetoothSocket> clients = new HashSet<BluetoothSocket>();
+>
+//在蓝牙服务线程中
+while (true) {
+    BluetoothSocket client = socket.accept();
+    Log.i("bluetooth", "Accept");
+    if (client != null) {
+        //进行同步
+        synchronized (clients) {
+            clients.add(client);
+            OutputStream os = client.getOutputStream();
+            PrintStream out = new PrintStream(os);
+            out.println("Hello from Bluetooth!");
+        }
+    }
+}
+>
+//在HTTP服务中
+AsyncHttpServer server = new AsyncHttpServer();
+server.get("/", new HttpServerRequestCallback() {
+    @Override
+    public void onRequest(AsyncHttpServerRequest request, AsyncHttpServerResponse response) {
+        response.send("Hello!!!");
+        //进行同步
+        synchronized (clients) {
+            //对每个连接发送消息
+            for (BluetoothSocket c : clients) {
+                try {
+                    OutputStream os = c.getOutputStream();
+                    PrintStream out = new PrintStream(os);
+                    out.println("Hello from Http!");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+});
+```
+
+#### 6. 实现蓝牙的Client
 
 > 这里使用Python实现了一个蓝牙的Client，使用pybluez库作为操作蓝牙的基础库，连接完成后接收数据，并关闭连接
 >
@@ -124,8 +170,12 @@ host = 'D4:12:43:66:C4:A3';
 port = 3;
 sock.connect((host, port));
 print(sock.recv(1024));
+print(sock.recv(1024));
 sock.close();
 ```
-> Client将会从Server收到一个Hello!的字符串，并输出。
+> Client将会从Server收到一个Hello from Bluetooth!的字符串，并输出，同时通过HTTP调用HTTP Server，会再输出一个Hello from Http!
 >
-> 总体感觉Android的坑还是挺多的，各个版本直接的差异还是比较明显的，同时在相关的文档中又没有很清楚的说明，如果需要适配多个版本的Android系统的额外工作量还是比较大的，同时需要的各种访问权限需要在UI中手动确认，作为服务程序每次启动和重启都要手动点击确认确实还是不太方便。
+
+#### 7. 总结
+>
+> 总体感觉Android的坑还是挺多的，各个版本之间的差异还是比较明显的，同时在相关的文档中又没有很清楚的说明，如果需要适配多个版本的Android系统的额外工作量还是比较大的，同时需要的各种访问权限需要在UI中手动确认，作为服务程序每次启动和重启都要手动点击确认确实还是不太方便。
