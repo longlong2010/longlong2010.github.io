@@ -48,7 +48,7 @@ wsl --import Gentoo Z:\WSL\Gentoo stage3-amd64-systemd-20211101T222649Z.tar.xz -
 
 > 在目前各种Linux发行版中定制化程度高，且比较易用的当属Arch Linux，下一版本的SteamOS也将基于Arch，这里介绍手动配置Arch Linux子系统的方法。
 >
-> 首先现在Arch Linux的最小化文件系统，当前的最新版本为archlinux-bootstrap-2021.11.01-x86\_64.tar.gz，安装方式其实和Gentoo比较类似，但由于镜像文件路径的问题，先要对镜像文件进行简单的处理，由于镜像文件中存在同一个目录中具有文件名只是大小写不同的文件，为此需要在Linux环境进行处理，以root运行以下命令：
+> 首先下载Arch Linux的最小化文件系统，当前的最新版本为archlinux-bootstrap-2021.11.01-x86\_64.tar.gz，安装方式其实和Gentoo比较类似，但由于镜像文件路径的问题，先要对镜像文件进行简单的处理，由于镜像文件中存在同一个目录中具有文件名只是大小写不同的文件，为此需要在Linux环境进行处理，以root运行以下命令：
 ```bash
 tar -xzpf archlinux-bootstrap-2021.11.01-x86_64.tar.gz
 cd  root.x86_64
