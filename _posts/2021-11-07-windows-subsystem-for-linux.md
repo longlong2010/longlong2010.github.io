@@ -82,4 +82,10 @@ wsl ~ -u longlong
 
 #### 5. 在Linux子系统中使用GPU
 
-> 待续
+> 在WSL中使用GPU需要在Windows主系统中安装对应的GPU驱动程序，御三家的WSL驱动如下，其中NVIDIA还有支持WSL的CUDA驱动
+>
+[Intel GPU驱动](https://www.intel.com/content/www/us/en/download/19344/intel-graphics-windows-dch-drivers.html)
+>
+[AMD GPU驱动](https://www.amd.com/en/support/kb/release-notes/rn-rad-win-wsl-support)
+>
+[NVIDIA GPU驱动](https://developer.nvidia.com/cuda/wsl)
