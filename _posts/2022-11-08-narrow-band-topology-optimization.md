@@ -46,10 +46,12 @@ make
 
 #### 5. 编译其余部分
 
-> 其余部分将作为taichi的一部分，退回到spgrid\_topo\_opt目录下使用ti build指令进行编译，编译前需要定义三个环境变量，分别为MLK路径，CUDA版本（没有可以设为0），使用double类型（这个必须设置为1否则后面编译会报错）
+> 其余部分将作为taichi的一部分，退回到spgrid\_topo\_opt目录下使用ti build指令进行编译，编译前需要定义三个环境变量，分别为MLK路径，GPU对应的CUDA架构版本（没有可以设为0，具体值可以在官网查表），使用double类型（这个必须设置为1否则后面编译会报错），同时如果需要使用对计算结果的可视化功能必须具有CUDA支持才可以
 ```bash
 export TC_MKL_PATH=/opt/intel/compilers_and_libraries_2019/linux/mkl/lib/intel64_lin/
-export CUDA_ARCH=0
+#Pascal架构为6.1，Turing架构为7.5，Ampere架构为8.6
+export CUDA_ARCH=75
 export TC_USE_DOUBLE=1
 ```
-> 然后就可以运行scripts目录中的例子了，需要注意这里的例子都需要较大的内存才能运行。
+>
+> 然后就可以运行scripts目录中的例子了，需要注意这里的例子都需要较大的内存才能运行，结果文件会被保存到taichi/output目录下
