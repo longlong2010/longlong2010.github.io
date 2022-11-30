@@ -54,4 +54,46 @@ export CUDA_ARCH=75
 export TC_USE_DOUBLE=1
 ```
 >
-> 然后就可以运行scripts目录中的例子了，需要注意这里的例子都需要较大的内存才能运行，结果文件会被保存到taichi/output目录下
+> 然后就可以运行scripts目录中的例子了，需要注意这里的例子都需要较大的内存才能运行，结果文件会被保存到taichi/outputs目录下
+
+#### 6. 基本使用方法
+
+> 由于没有详细的说明文档，使用的方法主要可以参考scripts目录下的相关实例脚本，同时编写的脚本也需要放置于scripts目录下。
+>
+#### (1) 导出模型
+>
+> 该代码隐含要求设计域为(-0.5, -0.5, -0,5)到(0.5, 0.5, 0.5)组成体积为1的立方体区域，为此在导入设计模型是需要将设计的三维模型缩放至在导出模型的坐标系中刚好在该包络内，导出模型的格式为Wavefront的ojb格式，导出方式类似stl并且需要在导出时指定坐标系。导出的模型放置于data目录下。
+>
+#### (2) 参数设置
+>
+> 求解主要的参数为网格的分辨率和体积分数，另外一般可以开启保留位移边界和载荷施加位置的单元的设置，其他参数的设置可参考其他实例脚本中的设置
+```python
+from topo_opt import TopoOpt;
+version = 1;
+narrow_band = True;
+#体积分数
+volume_fraction = 0.1;
+#网格分辨率
+n = 3000;
+#fix_cells_at_dirichlet和fix_cells_near_force分别为保留位移边界和载荷施加位置的单元
+opt = TopoOpt(res=(n, n, n), version=version, volume_fraction=volume_fraction,
+              grid_update_start=5 if narrow_band else 1000000,
+              fix_cells_near_force=True, fix_cells_at_dirichlet=True, fixed_cell_density=0.1);
+```
+#### (3) 施加边界条件
+> 
+> 通过add\_dirichlet\_bc和add\_load及其他的衍生方法施加位移及载荷边界条件，目前支持以点为中心的区域，平面区域，长方体区域，网格表面等施加方法。
+```python
+#施加位移边界条件
+opt.add_dirichlet_bc((0, 0, -0.1), radius=0.05, axis='xyz', value=(0, 0, 0));
+#施加载荷边界条件
+opt.add_load(center=(0.0, -y + 0.01, 0.0), force=(0, -1e6, 0));
+```
+#### (4) 结果可视化
+> 
+> 计算的结果将保存到taichi/outputs目录下，使用ti vd命令可以实现对计算结果的可视化，需要配置好CUDA支持才可以使用
+```bash
+#对fem目录下的结果文件进行可视化显示
+ti vd fem
+```
+> 使用1,2,3键可以对结果进行对三个坐标轴的对称显示，H和L键可以在多个求解结果文件之间进行切换，J和K键可调节显示部分的最小密度，T键可进行透明化显示（类似X光片），S及Shift+S可对可视化结果进行保存（保存为png或是ply格式到/tmp目录下）。
