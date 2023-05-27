@@ -1,5 +1,5 @@
 ---
-title: 使用selenimu实现浏览器爬取网页
+title: 使用Selenium实现浏览器爬取网页
 layout: post
 ---
 
@@ -7,11 +7,11 @@ layout: post
 >
 > 而在之前通常使用的方法是使用基于各中编程语言提供的HTTP客户端API进行直接的数据抓取，这种方法直接获取有用的数据，有着效率高同时节约网络带宽的特点。但如今即使是Web端也同样利用的大量的Javascrip技术，网页中大量数据都是在网页HTML框架加载完成后才进行，要想抓取其中有用的数据还需要搞清楚整个网页的运行机理，同时各种Javascript代码还进行了各种精简化很难读懂，为此通脚本直接过操控浏览器的方式就成为了一种实现更加简单，并且由于是完全模拟浏览器的行为，在服务端进行识别和封禁也相对会比较难，有着更好的适应性，缺点也同样明显——效率低占用资源也相对较高。
 
-#### 1. Selenimu简介
+#### 1. Selenium简介
 
 > Selenium 通过使用WebDriver支持市场上所有主流浏览器的自动化。 Webdriver是一个API和协议，它定义了一个语言中立的接口，用于控制Web浏览器的行为。每个浏览器都有一个特定的WebDriver实现，称为驱动程序。驱动程序是负责委派给浏览器的组件，并处理与 Selenium 和浏览器之间的通信。其本质就是一种浏览器的操作接口，可以实现对各种浏览器的自动化操作。
 >
-> 这里将以Python语言和Firefox浏览器为例介绍Selenimu的使用方法，使用前需要下载Firefox浏览器对应的驱动程序Geckodriver，在Windows下可将下载好的geckodriver.exe程序放入Firefox的安装目录下。
+> 这里将以Python语言和Firefox浏览器为例介绍Selenium的使用方法，使用前需要下载Firefox浏览器对应的驱动程序Geckodriver，在Windows下可将下载好的geckodriver.exe程序放入Firefox的安装目录下。
 
 #### 2. 初始化
 
