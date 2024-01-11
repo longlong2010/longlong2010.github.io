@@ -96,6 +96,59 @@ if __name__ == '__main__':
     #保持绘制的图片
     plt.savefig('1.png');
 ```
+> 由于Python接口只能支持Python2，如今已经几乎不能用了，附上C版本的代码
+>
+```c
+#include <ode/ode.h>
+int main() {
+    const dReal TIME_STEP = 0.01;
+    const dReal TIME_STOP = TIME_STEP * 200;
+    dInitODE();
+    dWorldID w = dWorldCreate();
+    dWorldSetGravity(w, 0.0, -9.8, 0.0);
+>
+    dBodyID b1 = dBodyCreate(w);
+    dBodySetPosition(b1, 0.0, -0.5, 0.0);
+    dBodySetLinearVel(b1, 10.0, 0.0, 0.0);
+    dMass m1;
+    dMassSetSphereTotal(&m1, 0.1, 0.05);
+    dBodySetMass(b1, &m1);
+>
+    dBodyID b2 = dBodyCreate(w);
+    dBodySetPosition(b2, 0.5, -1.0, 0.0);
+    dMass m2;
+    dMassSetSphereTotal(&m2, 0.1, 0.05);
+    dBodySetMass(b2, &m2);
+>
+    dJointGroupID jd = dJointGroupCreate(10);
+>
+    dJointID j1 = dJointCreateBall(w, jd);
+    dJointAttach(j1, b1, 0);
+    dJointSetBallAnchor(j1, 0.0, 0.0, 0.0);
+>
+    dJointID j2 = dJointCreateBall(w, jd);
+    dJointAttach(j2, b1, b2);
+    dJointSetBallAnchor(j2, 0.0, -0.5, 0.0);
+>
+    dReal total_time = 0.0;
+    while (total_time < TIME_STOP) {
+        const dReal* u1 = dBodyGetPosition(b1);
+        const dReal* u2 = dBodyGetPosition(b2);
+        printf("%f\t%f\t%f\t%f\n", u1[0], u1[1], u2[0], u2[1]);
+        dWorldStep(w, TIME_STEP);
+        total_time += TIME_STEP;
+    }
+    dBodyDestroy(b1);
+    dBodyDestroy(b2);
+    dJointDestroy(j1);
+    dJointDestroy(j2);
+    dJointGroupDestroy(jd);
+    dWorldDestroy(w);
+    dCloseODE();
+    return 0;
+}
+```
 > 运行后得到的双摆轨迹曲线如下图所示，混乱中似乎有带有一些美感。
+>
 
 <img src="//raw.githubusercontent.com/longlong2010/image.longlong2010.github.io/master/202106/simple-pendulum.png" width="600"/>
