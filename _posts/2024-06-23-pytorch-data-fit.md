@@ -70,4 +70,5 @@ book.close();
 
 > 对于一电池的电量进行随使用次数及每次的充放电时间进行拟合，其拟合结果曲线如所示： 
 <img src="//raw.githubusercontent.com/longlong2010/image.longlong2010.github.io/master/prediction.png" width="600"/>
+>
 > 可见拟合效果还是不错的，并且在数据有较强的波动的情况下也并不存在明显的过拟合现象。
